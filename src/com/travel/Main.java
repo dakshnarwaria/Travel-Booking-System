@@ -1,118 +1,166 @@
 package com.travel;
 
-import com.travel.enums.BookingStatus;
-import com.travel.enums.PaymentMode;
 import com.travel.enums.SeatClass;
 import com.travel.enums.SeatStatus;
-import com.travel.enums.SeatType;
-import com.travel.enums.TransportType;
+import com.travel.layout.BerthBayLayout;
+import com.travel.layout.CabinLayout;
+import com.travel.layout.ChairLayout;
+import com.travel.layout.FlightCabinLayout;
+import com.travel.layout.SeatLayout;
+import com.travel.layout.SleeperDeckLayout;
+import com.travel.seat.Seat;
+import com.travel.ui.SeatMapRenderer;
 import com.travel.util.ConsoleColors;
-import com.travel.util.DistanceCalculator;
-import com.travel.util.IdGenerator;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 /**
- * Demonstrates: Program Entry Point, Static Methods, and System Integration.
- * Serves as the console launcher for the Travel Ticket Booking System.
- * In Phase 1, it demonstrates ANSI color rendering, seat map legends, and core utilities.
+ * Demonstrates: Program Entry Point, Command-Line Option Dispatching,
+ * Deterministic Seeding, and Non-Interactive Demonstration.
  */
 public class Main {
 
+    private static final long SEED = 42L;
+    private static final double BOOKED_RATIO = 0.35; // 35% deterministic pre-sold seats
+
     public static void main(String[] args) {
-        printBanner();
-        printColorLegend();
-        printSystemSummary();
+        boolean isDemo = false;
+        String filterName = null;
+
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i].trim();
+            if ("--ascii".equalsIgnoreCase(arg)) {
+                ConsoleColors.setAsciiMode(true);
+            } else if ("--nocolor".equalsIgnoreCase(arg)) {
+                ConsoleColors.setNoColor(true);
+            } else if ("--demo".equalsIgnoreCase(arg)) {
+                isDemo = true;
+                if (i + 1 < args.length && !args[i + 1].startsWith("--")) {
+                    filterName = args[++i].trim();
+                }
+            }
+        }
+
+        // Default to non-interactive demo if executed with no arguments
+        if (args.length == 0) {
+            isDemo = true;
+        }
+
+        if (isDemo) {
+            runDemo(filterName);
+        } else {
+            runDemo(null);
+        }
     }
 
-    private static void printBanner() {
-        System.out.println("================================================================================");
-        System.out.println(ConsoleColors.colorize(
-                "             TRAVEL TICKET BOOKING SYSTEM - OOPS ARCHITECTURE",
-                ConsoleColors.CYAN,
-                ConsoleColors.BOLD
-        ));
-        System.out.println("================================================================================");
-        System.out.println("Phase 1 Verification: Foundation, Enums, Interfaces, Exceptions & Color System");
-        System.out.println("--------------------------------------------------------------------------------\n");
+    private static void runDemo(String filterName) {
+        List<SeatLayout> layouts = createAllLayouts();
+
+        if (filterName != null && !filterName.isEmpty()) {
+            String target = filterName.toLowerCase();
+            SeatLayout matched = null;
+
+            // 1. Exact match on full title ("Bus Sleeper", "Bus AC Sleeper")
+            for (SeatLayout layout : layouts) {
+                if (layout.getSeatClass().toString().equalsIgnoreCase(target)
+                        || layout.getSeatClass().getDisplayName().equalsIgnoreCase(target)
+                        || layout.getSeatClass().name().equalsIgnoreCase(target)) {
+                    matched = layout;
+                    break;
+                }
+            }
+
+            // 2. Fallback to contains
+            if (matched == null) {
+                for (SeatLayout layout : layouts) {
+                    if (layout.getSeatClass().toString().toLowerCase().contains(target)) {
+                        matched = layout;
+                        break;
+                    }
+                }
+            }
+
+            if (matched != null) {
+                SeatMapRenderer.renderLayout(matched);
+            } else {
+                System.out.println("No matching seat class for: " + filterName);
+            }
+        } else {
+            // Render all 10 classes without PREVIEW banners
+            for (SeatLayout layout : layouts) {
+                SeatMapRenderer.renderLayout(layout);
+            }
+        }
     }
 
     /**
-     * Prints the visual seat map colour legend according to PLAN.md specifications:
-     * - Standard available (Green)
-     * - Premium available (Yellow)
-     * - Booked (Grey with X)
-     * - Selected (Cyan)
+     * Instantiates all 10 seat layouts matching PLAN.md Section 4 seat counts.
      */
-    private static void printColorLegend() {
-        System.out.println(ConsoleColors.colorize("SEAT MAP COLOUR LEGEND", ConsoleColors.WHITE, ConsoleColors.BOLD));
-        System.out.println("----------------------");
+    public static List<SeatLayout> createAllLayouts() {
+        List<SeatLayout> list = new ArrayList<>();
+        long seedOffset = 0;
 
-        // Standard available seat sample
-        String standardSample = ConsoleColors.colorize("  [ 1A ]   Available (Standard) - Green", ConsoleColors.COLOR_STANDARD);
-        System.out.println(standardSample);
+        // 1. Bus Seater (non-AC) - 40 seats
+        SeatLayout busSeater = new ChairLayout(SeatClass.BUS_SEATER, 10, 2, 2, new char[]{'A', 'B', 'C', 'D'});
+        seedBookedSeats(busSeater, SEED + seedOffset++);
+        list.add(busSeater);
 
-        // Premium available seat sample
-        String premiumSample = ConsoleColors.colorize("  [ 1B ]   Available (Premium / AC / Business) - Yellow", ConsoleColors.COLOR_PREMIUM);
-        System.out.println(premiumSample);
+        // 2. Bus AC Seater - 40 seats
+        SeatLayout busAcSeater = new ChairLayout(SeatClass.BUS_AC_SEATER, 10, 2, 2, new char[]{'A', 'B', 'C', 'D'});
+        seedBookedSeats(busAcSeater, SEED + seedOffset++);
+        list.add(busAcSeater);
 
-        // Booked seat sample with X
-        String bookedSample = ConsoleColors.colorize("  [X1C ]   Booked (Sold Out) - Grey with 'X'", ConsoleColors.COLOR_BOOKED);
-        System.out.println(bookedSample);
+        // 3. Bus Sleeper (non-AC) - 36 seats
+        SeatLayout busSleeper = new SleeperDeckLayout(SeatClass.BUS_SLEEPER);
+        seedBookedSeats(busSleeper, SEED + seedOffset++);
+        list.add(busSleeper);
 
-        // Selected seat sample
-        String selectedSample = ConsoleColors.colorize("  [ 1D ]   Selected (In Progress) - Cyan", ConsoleColors.COLOR_SELECTED);
-        System.out.println(selectedSample);
+        // 4. Bus AC Sleeper - 36 seats
+        SeatLayout busAcSleeper = new SleeperDeckLayout(SeatClass.BUS_AC_SLEEPER);
+        seedBookedSeats(busAcSleeper, SEED + seedOffset++);
+        list.add(busAcSleeper);
 
-        System.out.println();
+        // 5. Train Chair Car - 50 seats
+        SeatLayout trainChair = new ChairLayout(SeatClass.TRAIN_CHAIR_CAR, 10, 3, 2, new char[]{'A', 'B', 'C', 'D', 'E'});
+        seedBookedSeats(trainChair, SEED + seedOffset++);
+        list.add(trainChair);
 
-        // Sample Seat Mockup Render
-        System.out.println(ConsoleColors.colorize("MOCKUP SEAT BLOCKS PREVIEW:", ConsoleColors.WHITE, ConsoleColors.BOLD));
-        System.out.print("  ");
-        System.out.print(ConsoleColors.colorize("┌───┐", ConsoleColors.COLOR_STANDARD) + " ");
-        System.out.print(ConsoleColors.colorize("┌───┐", ConsoleColors.COLOR_PREMIUM) + " ");
-        System.out.print(ConsoleColors.colorize("┌───┐", ConsoleColors.COLOR_BOOKED) + " ");
-        System.out.print(ConsoleColors.colorize("┌───┐", ConsoleColors.COLOR_SELECTED));
-        System.out.println();
+        // 6. Train Non-AC Sleeper - 48 seats
+        SeatLayout trainSleeper = new BerthBayLayout(SeatClass.TRAIN_SLEEPER, 8);
+        seedBookedSeats(trainSleeper, SEED + seedOffset++);
+        list.add(trainSleeper);
 
-        System.out.print("  ");
-        System.out.print(ConsoleColors.colorize("│1A │", ConsoleColors.COLOR_STANDARD) + " ");
-        System.out.print(ConsoleColors.colorize("│1B │", ConsoleColors.COLOR_PREMIUM) + " ");
-        System.out.print(ConsoleColors.colorize("│X1C│", ConsoleColors.COLOR_BOOKED) + " ");
-        System.out.print(ConsoleColors.colorize("│1D │", ConsoleColors.COLOR_SELECTED));
-        System.out.println();
+        // 7. Train AC 2-Tier - 36 seats
+        SeatLayout train2Tier = new BerthBayLayout(SeatClass.TRAIN_AC_2_TIER, 6);
+        seedBookedSeats(train2Tier, SEED + seedOffset++);
+        list.add(train2Tier);
 
-        System.out.print("  ");
-        System.out.print(ConsoleColors.colorize("└───┘", ConsoleColors.COLOR_STANDARD) + " ");
-        System.out.print(ConsoleColors.colorize("└───┘", ConsoleColors.COLOR_PREMIUM) + " ");
-        System.out.print(ConsoleColors.colorize("└───┘", ConsoleColors.COLOR_BOOKED) + " ");
-        System.out.print(ConsoleColors.colorize("└───┘", ConsoleColors.COLOR_SELECTED));
-        System.out.println();
+        // 8. Train AC 1-Tier - 20 seats
+        SeatLayout train1Tier = new CabinLayout(SeatClass.TRAIN_AC_1_TIER);
+        seedBookedSeats(train1Tier, SEED + seedOffset++);
+        list.add(train1Tier);
 
-        System.out.print("  ");
-        System.out.print(ConsoleColors.colorize("₹899 ", ConsoleColors.COLOR_STANDARD) + " ");
-        System.out.print(ConsoleColors.colorize("₹1399", ConsoleColors.COLOR_PREMIUM) + " ");
-        System.out.print(ConsoleColors.colorize("Sold ", ConsoleColors.COLOR_BOOKED) + " ");
-        System.out.print(ConsoleColors.colorize("Sel  ", ConsoleColors.COLOR_SELECTED));
-        System.out.println("\n");
+        // 9. Flight Economy - 72 seats
+        SeatLayout flightEcon = new FlightCabinLayout(SeatClass.FLIGHT_ECONOMY);
+        seedBookedSeats(flightEcon, SEED + seedOffset++);
+        list.add(flightEcon);
+
+        // 10. Flight Business - 16 seats
+        SeatLayout flightBus = new FlightCabinLayout(SeatClass.FLIGHT_BUSINESS);
+        seedBookedSeats(flightBus, SEED + seedOffset++);
+        list.add(flightBus);
+
+        return list;
     }
 
-    private static void printSystemSummary() {
-        System.out.println(ConsoleColors.colorize("SYSTEM FOUNDATION HEALTH CHECK:", ConsoleColors.WHITE, ConsoleColors.BOLD));
-        System.out.println("-------------------------------");
-        System.out.println("  * Transport Modes Defined : " + TransportType.values().length + " (Bus, Train, Flight)");
-        System.out.println("  * Seat Classes Loaded     : " + SeatClass.values().length + " classes across 3 modes");
-        System.out.println("  * Seat Types Active       : " + SeatType.values().length + " (Chair, Sleeper, Berth)");
-        System.out.println("  * Seat Statuses Mapped    : " + SeatStatus.values().length + " states");
-        System.out.println("  * Payment Modes Configured: " + PaymentMode.values().length + " payment instruments");
-        System.out.println("  * Booking Lifecycle States: " + BookingStatus.values().length + " states");
-
-        // Distance test between New Delhi and Mumbai coordinates
-        double delhiLat = 28.6139, delhiLon = 77.2090;
-        double mumbaiLat = 19.0760, mumbaiLon = 72.8777;
-        double directDist = DistanceCalculator.haversine(delhiLat, delhiLon, mumbaiLat, mumbaiLon);
-        double busDist = DistanceCalculator.calculateRouteDistance(delhiLat, delhiLon, mumbaiLat, mumbaiLon, TransportType.BUS.getRoadFactor());
-
-        System.out.println(String.format("  * Distance Test (Delhi -> Mumbai) : Direct: %.1f km | Bus Route: %.1f km", directDist, busDist));
-        System.out.println("  * Sample PNR Generation           : " + IdGenerator.generatePnr() + ", " + IdGenerator.generatePnr());
-        System.out.println("\n" + ConsoleColors.colorize("Status: Phase 1 Foundation successfully compiled and validated.", ConsoleColors.GREEN, ConsoleColors.BOLD));
+    private static void seedBookedSeats(SeatLayout layout, long seed) {
+        Random rng = new Random(seed);
+        for (Seat seat : layout.getAllSeats()) {
+            if (rng.nextDouble() < BOOKED_RATIO) {
+                seat.setStatus(SeatStatus.BOOKED);
+            }
+        }
     }
 }

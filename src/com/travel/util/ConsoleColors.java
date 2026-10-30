@@ -51,8 +51,9 @@ public final class ConsoleColors {
     public static final String COLOR_BOOKED = GREY;
     public static final String COLOR_SELECTED = CYAN;
 
-    // Global ASCII fallback switch for legacy/incompatible terminal environments
+    // Global independent flags
     private static volatile boolean asciiMode = false;
+    private static volatile boolean noColor = false;
 
     public static boolean isAsciiMode() {
         return asciiMode;
@@ -62,21 +63,29 @@ public final class ConsoleColors {
         asciiMode = mode;
     }
 
+    public static boolean isNoColor() {
+        return noColor;
+    }
+
+    public static void setNoColor(boolean flag) {
+        noColor = flag;
+    }
+
     /**
-     * Applies an ANSI color code to the text unless ASCII fallback mode is active.
+     * Applies an ANSI color code to the text unless noColor mode is active.
      */
     public static String colorize(String text, String ansiColor) {
-        if (asciiMode || text == null || ansiColor == null) {
+        if (noColor || text == null || ansiColor == null) {
             return text;
         }
         return ansiColor + text + RESET;
     }
 
     /**
-     * Applies both formatting and color unless ASCII fallback mode is active.
+     * Applies both formatting and color unless noColor mode is active.
      */
     public static String colorize(String text, String ansiColor, String style) {
-        if (asciiMode || text == null) {
+        if (noColor || text == null) {
             return text;
         }
         return (style != null ? style : "") + (ansiColor != null ? ansiColor : "") + text + RESET;

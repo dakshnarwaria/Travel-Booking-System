@@ -7,7 +7,7 @@ echo "==================================================="
 
 mkdir -p out
 
-javac -encoding UTF-8 -d out -sourcepath src src/com/travel/Main.java src/com/travel/enums/*.java src/com/travel/interfaces/*.java src/com/travel/exception/*.java src/com/travel/util/*.java
+javac -encoding UTF-8 -d out -sourcepath src src/com/travel/Main.java src/com/travel/enums/*.java src/com/travel/interfaces/*.java src/com/travel/exception/*.java src/com/travel/util/*.java src/com/travel/seat/*.java src/com/travel/layout/*.java src/com/travel/ui/*.java
 
 echo "Compilation successful!"
 echo ""
