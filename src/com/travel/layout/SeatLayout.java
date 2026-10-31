@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Demonstrates: Abstraction (Abstract Class), Composition (has-a List<Seat>),
@@ -24,8 +23,8 @@ public abstract class SeatLayout implements Serializable {
     protected SeatClass seatClass;
     protected int totalDecks;
     protected int totalRows;
-    protected final List<Seat> seats = new ArrayList<>();
-    protected final Map<String, Seat> seatMap = new LinkedHashMap<>();
+    protected final ArrayList<Seat> seats = new ArrayList<>();
+    protected final LinkedHashMap<String, Seat> seatMap = new LinkedHashMap<>();
 
     public SeatLayout(SeatClass seatClass, int totalDecks, int totalRows) {
         this.seatClass = seatClass;
@@ -38,7 +37,7 @@ public abstract class SeatLayout implements Serializable {
      */
     public abstract void initializeLayout();
 
-    protected void registerSeat(Seat seat) {
+    protected final void registerSeat(Seat seat) {
         if (seat != null) {
             seats.add(seat);
             seatMap.put(seat.getSeatNumber().toUpperCase(), seat);

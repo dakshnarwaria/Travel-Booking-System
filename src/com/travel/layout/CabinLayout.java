@@ -8,7 +8,7 @@ import com.travel.seat.BerthSeat;
  * Demonstrates: Inheritance (extends SeatLayout) and Compartment Cabin Partitioning.
  * Models Train AC 1-Tier First Class private 4-berth coupes/cabins (2 Lower + 2 Upper).
  */
-public class CabinLayout extends SeatLayout {
+public final class CabinLayout extends SeatLayout {
 
     private static final long serialVersionUID = 1L;
 
@@ -21,7 +21,7 @@ public class CabinLayout extends SeatLayout {
     }
 
     @Override
-    public void initializeLayout() {
+    public final void initializeLayout() {
         seats.clear();
         seatMap.clear();
 

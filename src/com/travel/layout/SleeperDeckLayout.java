@@ -7,7 +7,7 @@ import com.travel.seat.SleeperSeat;
  * Demonstrates: Inheritance (extends SeatLayout) and Multi-Deck Layout Architecture.
  * Models bi-level sleeper bus arrangements (Lower and Upper decks with 1+2 berths per row).
  */
-public class SleeperDeckLayout extends SeatLayout {
+public final class SleeperDeckLayout extends SeatLayout {
 
     private static final long serialVersionUID = 1L;
 
@@ -20,7 +20,7 @@ public class SleeperDeckLayout extends SeatLayout {
     }
 
     @Override
-    public void initializeLayout() {
+    public final void initializeLayout() {
         seats.clear();
         seatMap.clear();
 

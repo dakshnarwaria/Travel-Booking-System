@@ -6,7 +6,6 @@ import com.travel.enums.TransportType;
 import com.travel.layout.SeatLayout;
 import com.travel.model.Route;
 import com.travel.model.Trip;
-import com.travel.seat.ChairSeat;
 import com.travel.seat.Seat;
 import com.travel.transport.Bus;
 import com.travel.transport.Flight;

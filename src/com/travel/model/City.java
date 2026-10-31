@@ -1,6 +1,7 @@
 package com.travel.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -21,7 +22,7 @@ public class City implements Serializable {
     private final double longitude;
     private final boolean hasAirport;
     private final boolean hasStation;
-    private final List<String> touristPlaces;
+    private final ArrayList<String> touristPlaces;
 
     public City(int id, String name, String state, String tier, double latitude, double longitude,
                 boolean hasAirport, boolean hasStation, List<String> touristPlaces) {
@@ -33,7 +34,7 @@ public class City implements Serializable {
         this.longitude = longitude;
         this.hasAirport = hasAirport;
         this.hasStation = hasStation;
-        this.touristPlaces = (touristPlaces != null) ? touristPlaces : Collections.emptyList();
+        this.touristPlaces = (touristPlaces != null) ? new ArrayList<>(touristPlaces) : new ArrayList<>();
     }
 
     public int getId() {
@@ -68,6 +69,7 @@ public class City implements Serializable {
         return hasStation;
     }
 
+    /** Returns the city's tourist-place list as an unmodifiable view. */
     public List<String> getTouristPlaces() {
         return Collections.unmodifiableList(touristPlaces);
     }

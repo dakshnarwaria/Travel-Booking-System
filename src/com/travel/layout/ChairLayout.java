@@ -7,7 +7,7 @@ import com.travel.seat.ChairSeat;
  * Demonstrates: Inheritance (extends SeatLayout) and Polymorphic Initialization.
  * Models upright row-and-column seating layouts with an aisle (e.g. 2+2 for bus, 3+2 for train).
  */
-public class ChairLayout extends SeatLayout {
+public final class ChairLayout extends SeatLayout {
 
     private static final long serialVersionUID = 1L;
 
@@ -24,7 +24,7 @@ public class ChairLayout extends SeatLayout {
     }
 
     @Override
-    public void initializeLayout() {
+    public final void initializeLayout() {
         seats.clear();
         seatMap.clear();
 

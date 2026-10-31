@@ -1,2 +1,13 @@
 out/
 *.class
+data/bookings.dat
+data/bookings.dat.tmp
+
+# IDE and editor files
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.DS_Store

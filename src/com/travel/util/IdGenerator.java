@@ -10,14 +10,21 @@ public final class IdGenerator {
 
     public static final String PNR_PREFIX = "TRV";
     private static final int INITIAL_PNR_SEQUENCE = 10001;
-    private static final AtomicInteger PNR_COUNTER = new AtomicInteger(INITIAL_PNR_SEQUENCE);
+    private static final AtomicInteger PNR_COUNTER;
 
     private static final String TICKET_PREFIX = "TKT";
-    private static final AtomicInteger TICKET_COUNTER = new AtomicInteger(1001);
+    private static final int INITIAL_TICKET_SEQUENCE = 1001;
+    private static final AtomicInteger TICKET_COUNTER;
 
     private static final String TRANSACTION_PREFIX = "TXN";
     private static final int INITIAL_TRANSACTION_SEQUENCE = 50001;
-    private static final AtomicInteger TRANSACTION_COUNTER = new AtomicInteger(INITIAL_TRANSACTION_SEQUENCE);
+    private static final AtomicInteger TRANSACTION_COUNTER;
+
+    static {
+        PNR_COUNTER = new AtomicInteger(INITIAL_PNR_SEQUENCE);
+        TICKET_COUNTER = new AtomicInteger(INITIAL_TICKET_SEQUENCE);
+        TRANSACTION_COUNTER = new AtomicInteger(INITIAL_TRANSACTION_SEQUENCE);
+    }
 
     private IdGenerator() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");

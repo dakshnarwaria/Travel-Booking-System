@@ -8,7 +8,7 @@ import com.travel.layout.FlightCabinLayout;
  * Demonstrates: Inheritance (extends Transport) and Aviation Multi-Class Modeling.
  * Represents airlines offering Economy and Business class cabins.
  */
-public class Flight extends Transport {
+public final class Flight extends Transport {
 
     private static final long serialVersionUID = 1L;
 

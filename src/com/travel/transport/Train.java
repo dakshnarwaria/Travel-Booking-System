@@ -11,7 +11,7 @@ import com.travel.layout.ChairLayout;
  * Represents railway services offering Chair Car, Non-AC Sleeper, AC 2-Tier, and AC 1-Tier coaches.
  * For short routes (< 250 km), only Chair Car and Non-AC Sleeper are offered per Rule 4b.
  */
-public class Train extends Transport {
+public final class Train extends Transport {
 
     private static final long serialVersionUID = 1L;
     public static final double SHORT_ROUTE_THRESHOLD_KM = 250.0;

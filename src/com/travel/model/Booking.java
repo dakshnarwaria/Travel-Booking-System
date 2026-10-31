@@ -25,13 +25,14 @@ public class Booking implements Serializable {
     private final String pnr;
     private final Trip trip;
     private final SeatClass seatClass;
-    private final List<Seat> seats;
-    private final List<Passenger> passengers;
+    private final ArrayList<Seat> seats;
+    private final ArrayList<Passenger> passengers;
     private double totalFare;
     private BookingStatus status;
     private Payment payment;
     private final LocalDateTime bookingTime;
 
+    /** Creates a pending booking with defensive copies of the seat and passenger lists. */
     public Booking(String pnr, Trip trip, SeatClass seatClass, List<Seat> seats,
                    List<Passenger> passengers, double totalFare) {
         this.pnr = pnr;
@@ -44,6 +45,7 @@ public class Booking implements Serializable {
         this.bookingTime = LocalDateTime.now();
     }
 
+    /** Returns the persistent booking reference. */
     public String getPnr() {
         return pnr;
     }

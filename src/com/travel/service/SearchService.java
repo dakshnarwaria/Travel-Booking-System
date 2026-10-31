@@ -21,7 +21,7 @@ import java.util.Map;
 public class SearchService {
 
     /**
-     * Data Transfer Object representing available class summary and starting fare.
+     * Demonstrates a static nested data-transfer class for a class's fare and availability summary.
      */
     public static class ClassFareInfo {
         private final SeatClass seatClass;

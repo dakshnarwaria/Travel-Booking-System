@@ -5,6 +5,8 @@ package com.travel.exception;
  * Thrown when a payment attempt fails due to cancellation, declined credentials, or transaction error.
  */
 public class PaymentFailedException extends TravelException {
+    private static final long serialVersionUID = 1L;
+
     private final String reason;
 
     public PaymentFailedException(String reason) {

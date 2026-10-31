@@ -4,7 +4,6 @@ import com.travel.enums.PaymentMode;
 import com.travel.exception.PaymentFailedException;
 import com.travel.exception.TooManyInvalidAttemptsException;
 import com.travel.payment.Payment;
-import com.travel.payment.PaymentStatus;
 import com.travel.util.Constants;
 import com.travel.util.InputHelper;
 

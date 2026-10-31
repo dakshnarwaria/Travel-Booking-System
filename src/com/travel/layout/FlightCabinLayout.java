@@ -9,7 +9,7 @@ import com.travel.seat.Seat;
  * - Economy: 12 rows of 3+3 (A, B, C | D, E, F) = 72 seats.
  * - Business: 4 rows of 2+2 (A, C | D, F) = 16 seats.
  */
-public class FlightCabinLayout extends SeatLayout {
+public final class FlightCabinLayout extends SeatLayout {
 
     private static final long serialVersionUID = 1L;
 
@@ -19,7 +19,7 @@ public class FlightCabinLayout extends SeatLayout {
     }
 
     @Override
-    public void initializeLayout() {
+    public final void initializeLayout() {
         seats.clear();
         seatMap.clear();
 

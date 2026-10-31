@@ -6,7 +6,6 @@ import com.travel.enums.SeatClass;
 import com.travel.enums.SeatStatus;
 import com.travel.enums.TransportType;
 import com.travel.exception.InvalidSeatException;
-import com.travel.exception.InputEndedException;
 import com.travel.exception.PaymentFailedException;
 import com.travel.exception.SeatAlreadyBookedException;
 import com.travel.exception.TooManyInvalidAttemptsException;

@@ -22,8 +22,14 @@ public class BerthSeat extends SleeperSeat {
     public BerthSeat(String seatNumber, SeatClass seatClass, double price, String deckLabel,
                      BerthType berthType, int bayNumber) {
         super(seatNumber, seatClass, SeatType.BERTH, price, deckLabel);
-        setBerthType(berthType);
-        setBayNumber(bayNumber);
+        if (berthType == null) {
+            throw new InvalidInputException("Berth type cannot be null.");
+        }
+        if (bayNumber < 1) {
+            throw new InvalidInputException("Bay number must be positive: " + bayNumber);
+        }
+        this.berthType = berthType;
+        this.bayNumber = bayNumber;
     }
 
     public BerthType getBerthType() {

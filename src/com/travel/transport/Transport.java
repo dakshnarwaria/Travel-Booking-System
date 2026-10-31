@@ -20,7 +20,7 @@ public abstract class Transport implements Priceable, Serializable {
     private static final long serialVersionUID = 1L;
 
     protected String operatorName;
-    protected final Map<SeatClass, SeatLayout> seatLayouts = new LinkedHashMap<>();
+    protected final LinkedHashMap<SeatClass, SeatLayout> seatLayouts = new LinkedHashMap<>();
 
     public Transport(String operatorName) {
         this.operatorName = (operatorName != null) ? operatorName.trim() : "Standard Carrier";
@@ -44,7 +44,7 @@ public abstract class Transport implements Priceable, Serializable {
         return seatLayouts.get(seatClass);
     }
 
-    protected void registerLayout(SeatClass seatClass, SeatLayout layout) {
+    protected final void registerLayout(SeatClass seatClass, SeatLayout layout) {
         if (seatClass != null && layout != null) {
             seatLayouts.put(seatClass, layout);
         }

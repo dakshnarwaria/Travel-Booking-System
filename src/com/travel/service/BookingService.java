@@ -33,7 +33,17 @@ public class BookingService {
     private final BookingRepository bookingRepository;
 
     public BookingService() {
-        bookingRepository = BookingRepository.getInstance();
+        this(BookingRepository.getInstance());
+    }
+
+    /**
+     * Creates a booking service using an explicitly supplied repository.
+     */
+    public BookingService(BookingRepository bookingRepository) {
+        if (bookingRepository == null) {
+            throw new IllegalArgumentException("A booking repository is required.");
+        }
+        this.bookingRepository = bookingRepository;
         for (Booking booking : bookingRepository.getAllBookings()) {
             bookingRegistry.put(normalizePnr(booking.getPnr()), booking);
         }

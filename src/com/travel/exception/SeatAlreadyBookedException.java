@@ -5,6 +5,8 @@ package com.travel.exception;
  * Thrown when an operation attempts to select or reserve a seat that has already been taken.
  */
 public class SeatAlreadyBookedException extends TravelException {
+    private static final long serialVersionUID = 1L;
+
     private final String seatNumber;
 
     public SeatAlreadyBookedException(String seatNumber) {

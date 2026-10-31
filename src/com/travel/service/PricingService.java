@@ -50,7 +50,7 @@ public final class PricingService {
     }
 
     /**
-     * Data Transfer Object holding detailed fare calculations.
+     * Demonstrates a static nested data-transfer class holding detailed fare calculations.
      */
     public static class FareBreakdown implements Serializable {
         private static final long serialVersionUID = 1L;

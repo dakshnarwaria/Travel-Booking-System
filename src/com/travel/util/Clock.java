@@ -32,4 +32,9 @@ public final class Clock {
             );
         }
     }
+
+    /** Clears a test clock override and restores the system clock. */
+    public static void clearFixedTime() {
+        fixedNow = null;
+    }
 }

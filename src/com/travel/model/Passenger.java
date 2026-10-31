@@ -19,9 +19,9 @@ public class Passenger implements Serializable {
     private String seatNumber;
 
     public Passenger(String name, int age, String gender) {
-        setName(name);
-        setAge(age);
-        setGender(gender);
+        this.name = normalizeName(name);
+        this.age = validateAge(age);
+        this.gender = normalizeGender(gender);
     }
 
     public Passenger(String name, int age, String gender, String seatNumber) {
@@ -34,10 +34,14 @@ public class Passenger implements Serializable {
     }
 
     public void setName(String name) {
+        this.name = normalizeName(name);
+    }
+
+    private static String normalizeName(String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new InvalidInputException("Passenger name cannot be blank.");
         }
-        this.name = name.trim();
+        return name.trim();
     }
 
     public int getAge() {
@@ -45,10 +49,14 @@ public class Passenger implements Serializable {
     }
 
     public void setAge(int age) {
+        this.age = validateAge(age);
+    }
+
+    private static int validateAge(int age) {
         if (age < 1 || age > 125) {
             throw new InvalidInputException("Passenger age must be between 1 and 125. Provided: " + age);
         }
-        this.age = age;
+        return age;
     }
 
     public String getGender() {
@@ -56,10 +64,14 @@ public class Passenger implements Serializable {
     }
 
     public void setGender(String gender) {
+        this.gender = normalizeGender(gender);
+    }
+
+    private static String normalizeGender(String gender) {
         if (gender == null || gender.trim().isEmpty()) {
             throw new InvalidInputException("Passenger gender cannot be blank.");
         }
-        this.gender = gender.trim();
+        return gender.trim();
     }
 
     public String getSeatNumber() {

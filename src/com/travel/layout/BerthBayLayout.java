@@ -8,7 +8,7 @@ import com.travel.seat.BerthSeat;
  * Demonstrates: Inheritance (extends SeatLayout), Polymorphism, and Bay-Oriented Seating.
  * Models Indian Railways bay-partitioned sleeper coaches (Main bay + Side berths across 2 tiers).
  */
-public class BerthBayLayout extends SeatLayout {
+public final class BerthBayLayout extends SeatLayout {
 
     private static final long serialVersionUID = 1L;
 
@@ -21,7 +21,7 @@ public class BerthBayLayout extends SeatLayout {
     }
 
     @Override
-    public void initializeLayout() {
+    public final void initializeLayout() {
         seats.clear();
         seatMap.clear();
 

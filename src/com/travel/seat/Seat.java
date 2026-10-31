@@ -29,11 +29,11 @@ public abstract class Seat implements Displayable, Bookable, Serializable {
     private String deckLabel;
 
     public Seat(String seatNumber, SeatClass seatClass, SeatType seatType, double price, String deckLabel) {
-        setSeatNumber(seatNumber);
-        setSeatClass(seatClass);
-        setSeatType(seatType);
-        setPrice(price);
-        setDeckLabel(deckLabel);
+        this.seatNumber = normalizeSeatNumber(seatNumber);
+        this.seatClass = requireSeatClass(seatClass);
+        this.seatType = requireSeatType(seatType);
+        this.price = requirePrice(price);
+        this.deckLabel = normalizeDeckLabel(deckLabel);
         this.status = SeatStatus.AVAILABLE;
     }
 
@@ -44,10 +44,14 @@ public abstract class Seat implements Displayable, Bookable, Serializable {
     }
 
     public void setSeatNumber(String seatNumber) {
+        this.seatNumber = normalizeSeatNumber(seatNumber);
+    }
+
+    private static String normalizeSeatNumber(String seatNumber) {
         if (seatNumber == null || seatNumber.trim().isEmpty()) {
             throw new InvalidInputException("Seat number cannot be null or empty.");
         }
-        this.seatNumber = seatNumber.trim().toUpperCase();
+        return seatNumber.trim().toUpperCase();
     }
 
     public SeatClass getSeatClass() {
@@ -55,10 +59,14 @@ public abstract class Seat implements Displayable, Bookable, Serializable {
     }
 
     public void setSeatClass(SeatClass seatClass) {
+        this.seatClass = requireSeatClass(seatClass);
+    }
+
+    private static SeatClass requireSeatClass(SeatClass seatClass) {
         if (seatClass == null) {
             throw new InvalidInputException("Seat class cannot be null.");
         }
-        this.seatClass = seatClass;
+        return seatClass;
     }
 
     public SeatType getSeatType() {
@@ -66,10 +74,14 @@ public abstract class Seat implements Displayable, Bookable, Serializable {
     }
 
     public void setSeatType(SeatType seatType) {
+        this.seatType = requireSeatType(seatType);
+    }
+
+    private static SeatType requireSeatType(SeatType seatType) {
         if (seatType == null) {
             throw new InvalidInputException("Seat type cannot be null.");
         }
-        this.seatType = seatType;
+        return seatType;
     }
 
     public double getPrice() {
@@ -77,10 +89,14 @@ public abstract class Seat implements Displayable, Bookable, Serializable {
     }
 
     public void setPrice(double price) {
+        this.price = requirePrice(price);
+    }
+
+    private static double requirePrice(double price) {
         if (price < 0) {
             throw new InvalidInputException("Seat price cannot be negative: " + price);
         }
-        this.price = price;
+        return price;
     }
 
     public SeatStatus getStatus() {
@@ -99,7 +115,11 @@ public abstract class Seat implements Displayable, Bookable, Serializable {
     }
 
     public void setDeckLabel(String deckLabel) {
-        this.deckLabel = (deckLabel == null || deckLabel.trim().isEmpty()) ? "Main" : deckLabel.trim();
+        this.deckLabel = normalizeDeckLabel(deckLabel);
+    }
+
+    private static String normalizeDeckLabel(String deckLabel) {
+        return (deckLabel == null || deckLabel.trim().isEmpty()) ? "Main" : deckLabel.trim();
     }
 
     // Bookable Interface Implementation

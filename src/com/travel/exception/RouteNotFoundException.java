@@ -5,6 +5,8 @@ package com.travel.exception;
  * Thrown when no navigable path or transport schedule connects the requested origin and destination.
  */
 public class RouteNotFoundException extends TravelException {
+    private static final long serialVersionUID = 1L;
+
     private final String sourceCity;
     private final String destinationCity;
 

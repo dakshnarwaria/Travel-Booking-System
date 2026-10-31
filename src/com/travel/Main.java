@@ -100,6 +100,11 @@ public class Main {
             } else if ("--menu".equalsIgnoreCase(arg)) {
                 launchInteractiveMenu();
                 return;
+            } else if ("--test".equalsIgnoreCase(arg)) {
+                if (!TestRunner.run()) {
+                    System.exit(1);
+                }
+                return;
             } else if ("--cities".equalsIgnoreCase(arg)) {
                 printCitiesList();
                 return;
@@ -147,6 +152,7 @@ public class Main {
         System.out.println("  --fares <src> <dst> <dd-MM-yyyy>        : Prints comprehensive fare table for route");
         System.out.println("  --trips <src> <dst> <mode> <dd-MM-yyyy> : Displays scheduled trips for date");
         System.out.println("  --now \"dd-MM-yyyy HH:mm\"                : Overrides the current time for testing");
+        System.out.println("  --test                                  : Runs the non-interactive test suite");
         System.out.println("  --demo [\"Class Name\"]                   : Non-interactive seat map preview");
         System.out.println("  --ascii                                 : Enables ASCII fallback borders");
         System.out.println("  --nocolor                               : Disables ANSI color codes");

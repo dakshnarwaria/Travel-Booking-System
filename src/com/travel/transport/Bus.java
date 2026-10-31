@@ -9,7 +9,7 @@ import com.travel.layout.SleeperDeckLayout;
  * Demonstrates: Inheritance (extends Transport) and Polymorphism.
  * Represents bus operators offering Seater, AC Seater, Sleeper, and AC Sleeper services.
  */
-public class Bus extends Transport {
+public final class Bus extends Transport {
 
     private static final long serialVersionUID = 1L;
 

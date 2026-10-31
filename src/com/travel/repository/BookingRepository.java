@@ -58,6 +58,16 @@ public final class BookingRepository {
         return instance;
     }
 
+    /**
+     * Creates an isolated repository for tests or other explicitly scoped stores.
+     */
+    public static BookingRepository createForTesting(Path filePath) {
+        if (filePath == null) {
+            throw new IllegalArgumentException("A repository file path is required.");
+        }
+        return new BookingRepository(filePath);
+    }
+
     public synchronized List<Booking> getAllBookings() {
         return Collections.unmodifiableList(new ArrayList<>(bookings.values()));
     }
@@ -210,12 +220,13 @@ public final class BookingRepository {
         return IdGenerator.PNR_PREFIX + "-" + normalized;
     }
 
+    /** Demonstrates a static nested class for the serialized store snapshot. */
     private static final class StoreData implements Serializable {
         private static final long serialVersionUID = 1L;
 
         private final int version = STORE_VERSION;
-        private final Map<String, Booking> bookings;
-        private final Map<String, Set<String>> bookedSeatsByTrip;
+        private final LinkedHashMap<String, Booking> bookings;
+        private final HashMap<String, Set<String>> bookedSeatsByTrip;
 
         private StoreData(Map<String, Booking> bookings, Map<String, Set<String>> bookedSeatsByTrip) {
             this.bookings = new LinkedHashMap<>(bookings);

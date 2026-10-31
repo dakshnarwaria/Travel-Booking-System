@@ -5,6 +5,8 @@ package com.travel.exception;
  * Base class for all domain-specific checked exceptions in the Travel Booking System.
  */
 public class TravelException extends Exception {
+    private static final long serialVersionUID = 1L;
+
     public TravelException(String message) {
         super(message);
     }

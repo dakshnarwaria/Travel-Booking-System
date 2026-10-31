@@ -1,6 +1,5 @@
 package com.travel.model;
 
-import com.travel.enums.BookingStatus;
 import com.travel.util.ConsoleColors;
 import com.travel.util.Constants;
 import com.travel.util.IdGenerator;

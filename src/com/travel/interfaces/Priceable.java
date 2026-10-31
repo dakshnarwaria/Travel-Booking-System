@@ -12,6 +12,13 @@ public interface Priceable {
     double calculateFare();
 
     /**
+     * Checks whether a tax percentage is non-negative.
+     */
+    static boolean isValidGstPercentage(double gstPercentage) {
+        return gstPercentage >= 0;
+    }
+
+    /**
      * Demonstrates: Default method in interface.
      * Computes the total amount after applying a given Goods and Services Tax (GST) rate.
      * @param baseAmount the base price before tax
@@ -19,7 +26,7 @@ public interface Priceable {
      * @return total price including GST
      */
     default double applyGst(double baseAmount, double gstPercentage) {
-        if (baseAmount < 0 || gstPercentage < 0) {
+        if (baseAmount < 0 || !isValidGstPercentage(gstPercentage)) {
             return baseAmount;
         }
         return baseAmount + (baseAmount * (gstPercentage / 100.0));
