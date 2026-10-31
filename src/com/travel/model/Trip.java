@@ -13,14 +13,14 @@ import java.util.Objects;
 /**
  * Demonstrates: Composition (has-a Transport, has-a Route), Encapsulation,
  * and Date/Time API Integration.
- * Models an scheduled journey connecting origin and destination on a specific calendar date.
+ * Models a scheduled journey connecting origin and destination on a specific calendar date.
  */
 public class Trip implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     private final String tripId;
     private final Transport transport;
@@ -29,6 +29,7 @@ public class Trip implements Serializable {
     private final LocalTime departureTime;
     private final LocalTime arrivalTime;
     private final int durationMinutes;
+    private final int daysAdded;
 
     public Trip(String tripId, Transport transport, Route route, LocalDate date,
                 LocalTime departureTime, LocalTime arrivalTime, int durationMinutes) {
@@ -39,6 +40,10 @@ public class Trip implements Serializable {
         this.departureTime = departureTime;
         this.arrivalTime = arrivalTime;
         this.durationMinutes = durationMinutes;
+
+        // Calculate if arrival falls on subsequent days (+1 day, +2 days)
+        long totalSeconds = (long) departureTime.toSecondOfDay() + ((long) durationMinutes * 60L);
+        this.daysAdded = (int) (totalSeconds / 86400L);
     }
 
     public String getTripId() {
@@ -63,6 +68,18 @@ public class Trip implements Serializable {
 
     public LocalTime getArrivalTime() {
         return arrivalTime;
+    }
+
+    public int getDaysAdded() {
+        return daysAdded;
+    }
+
+    public String getFormattedArrival() {
+        String baseTime = arrivalTime.format(TIME_FORMATTER);
+        if (daysAdded > 0) {
+            return String.format("%s (+%d day%s)", baseTime, daysAdded, (daysAdded > 1 ? "s" : ""));
+        }
+        return baseTime;
     }
 
     public int getDurationMinutes() {
@@ -106,7 +123,7 @@ public class Trip implements Serializable {
         return String.format("[%s] %s | %s -> %s | Dep: %s Arr: %s (%s) | %s",
                 tripId, transport.getOperatorName(),
                 route.getSource().getName(), route.getDestination().getName(),
-                departureTime.format(TIME_FORMATTER), arrivalTime.format(TIME_FORMATTER),
+                departureTime.format(TIME_FORMATTER), getFormattedArrival(),
                 getFormattedDuration(), date.format(DATE_FORMATTER));
     }
 }

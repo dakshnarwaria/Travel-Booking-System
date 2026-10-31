@@ -14,7 +14,12 @@ import com.travel.model.Route;
 import com.travel.model.Trip;
 import com.travel.repository.CityRepository;
 import com.travel.seat.Seat;
+import com.travel.service.BookingService;
+import com.travel.service.PricingService;
+import com.travel.service.SearchService;
 import com.travel.service.TripGenerator;
+import com.travel.transport.Train;
+import com.travel.ui.ConsoleMenu;
 import com.travel.ui.SeatMapRenderer;
 import com.travel.util.ConsoleColors;
 
@@ -38,7 +43,7 @@ public class Main {
 
     public static void main(String[] args) {
         if (args.length == 0) {
-            runDemo(null);
+            printUsageHelp();
             return;
         }
 
@@ -48,8 +53,21 @@ public class Main {
                 ConsoleColors.setAsciiMode(true);
             } else if ("--nocolor".equalsIgnoreCase(arg)) {
                 ConsoleColors.setNoColor(true);
+            } else if ("--menu".equalsIgnoreCase(arg)) {
+                launchInteractiveMenu();
+                return;
             } else if ("--cities".equalsIgnoreCase(arg)) {
                 printCitiesList();
+                return;
+            } else if ("--fares".equalsIgnoreCase(arg)) {
+                if (i + 3 < args.length) {
+                    String src = args[++i].trim();
+                    String dst = args[++i].trim();
+                    String dateStr = args[++i].trim();
+                    printFaresTable(src, dst, dateStr);
+                } else {
+                    System.out.println("Usage: --fares <source> <destination> <dd-MM-yyyy>");
+                }
                 return;
             } else if ("--trips".equalsIgnoreCase(arg)) {
                 if (i + 4 < args.length) {
@@ -72,8 +90,88 @@ public class Main {
             }
         }
 
-        // Default fallback
-        runDemo(null);
+        printUsageHelp();
+    }
+
+    private static void printUsageHelp() {
+        System.out.println("================================================================================");
+        System.out.println(ConsoleColors.colorize("             TRAVEL TICKET BOOKING SYSTEM - COMMAND LINE HELP", ConsoleColors.CYAN, ConsoleColors.BOLD));
+        System.out.println("================================================================================");
+        System.out.println("Usage:");
+        System.out.println("  --menu                                  : Starts interactive console booking menu");
+        System.out.println("  --cities                                : Lists all 50 cities grouped by tier");
+        System.out.println("  --fares <src> <dst> <dd-MM-yyyy>        : Prints comprehensive fare table for route");
+        System.out.println("  --trips <src> <dst> <mode> <dd-MM-yyyy> : Displays scheduled trips for date");
+        System.out.println("  --demo [\"Class Name\"]                   : Non-interactive seat map preview");
+        System.out.println("  --ascii                                 : Enables ASCII fallback borders");
+        System.out.println("  --nocolor                               : Disables ANSI color codes");
+        System.out.println("================================================================================");
+    }
+
+    private static void launchInteractiveMenu() {
+        CityRepository cityRepo = CityRepository.getInstance();
+        SearchService searchService = new SearchService();
+        BookingService bookingService = new BookingService();
+        ConsoleMenu menu = new ConsoleMenu(cityRepo, searchService, bookingService);
+        menu.start();
+    }
+
+    // -------------------------------------------------------------------------
+    // Phase 4: Fares Table Command
+    // -------------------------------------------------------------------------
+
+    private static void printFaresTable(String srcName, String dstName, String dateStr) {
+        CityRepository repo = CityRepository.getInstance();
+        City source = repo.getCityByName(srcName);
+        City destination = repo.getCityByName(dstName);
+
+        if (source == null) {
+            System.out.printf("Error: Source city '%s' not found.\n", srcName);
+            return;
+        }
+        if (destination == null) {
+            System.out.printf("Error: Destination city '%s' not found.\n", dstName);
+            return;
+        }
+
+        System.out.println("=========================================================================================");
+        System.out.println(ConsoleColors.colorize(
+                String.format("FARE COMPARISON SCHEDULE: %s -> %s (DATE: %s)", source.getName().toUpperCase(), destination.getName().toUpperCase(), dateStr),
+                ConsoleColors.CYAN, ConsoleColors.BOLD
+        ));
+        System.out.println("=========================================================================================");
+        System.out.printf("%-8s | %-16s | %-10s | %-12s | %-8s | %-12s | %-10s\n",
+                "Mode", "Class", "Base Fare", "Res/Airport", "GST", "Convenience", "Total Fare");
+        System.out.println("-----------------------------------------------------------------------------------------");
+
+        for (TransportType mode : TransportType.values()) {
+            Route route = new Route(source, destination, mode);
+            if (!route.isOperable()) {
+                System.out.printf("%-8s | UNAVAILABLE: %s\n", mode.getDisplayName(), route.getInoperableReason());
+                continue;
+            }
+
+            double dist = route.getDistanceKm();
+            for (SeatClass sc : SeatClass.values()) {
+                if (sc.getTransportType() != mode) continue;
+
+                // Rule 4b: For routes under 250 km, offer only Chair Car and Non-AC Sleeper on trains
+                if (mode == TransportType.TRAIN && dist < Train.SHORT_ROUTE_THRESHOLD_KM) {
+                    if (sc == SeatClass.TRAIN_AC_2_TIER || sc == SeatClass.TRAIN_AC_1_TIER) {
+                        continue;
+                    }
+                }
+
+                PricingService.FareBreakdown fb = PricingService.calculateFare(sc, dist, null);
+                double resOrAir = fb.getReservationFee() + fb.getAirportFee();
+
+                System.out.printf("%-8s | %-16s | ₹%-9.0f | ₹%-11.0f | ₹%-7.0f | ₹%-11.0f | " +
+                                ConsoleColors.colorize("₹%-9.0f", (sc.isPremium() ? ConsoleColors.COLOR_PREMIUM : ConsoleColors.COLOR_STANDARD), ConsoleColors.BOLD) + "\n",
+                        mode.getDisplayName(), sc.getDisplayName(),
+                        fb.getBaseFare(), resOrAir, fb.getGstAmount(), fb.getConvenienceFee(), fb.getTotalFare());
+            }
+        }
+        System.out.println("=========================================================================================\n");
     }
 
     // -------------------------------------------------------------------------
@@ -142,7 +240,6 @@ public class Main {
 
         Route route = new Route(source, destination, mode);
 
-        // Check if route is operable
         if (!route.isOperable()) {
             System.out.println("================================================================================");
             System.out.println(ConsoleColors.colorize("TRANSPORT MODE UNAVAILABLE", ConsoleColors.RED, ConsoleColors.BOLD));
@@ -169,7 +266,8 @@ public class Main {
             Trip trip = trips.get(i);
             System.out.printf("Trip #%d: %s [%s]\n", (i + 1), trip.getTransport().getOperatorName(), trip.getTripId());
             System.out.printf("  Departure : %s | Arrival: %s | Duration: %s | Distance: %.1f km\n",
-                    trip.getDepartureTime(), trip.getArrivalTime(), trip.getFormattedDuration(), route.getDistanceKm());
+                    trip.getDepartureTime().format(Trip.TIME_FORMATTER), trip.getFormattedArrival(),
+                    trip.getFormattedDuration(), route.getDistanceKm());
 
             System.out.print("  Seats Left: ");
             StringBuilder sb = new StringBuilder();

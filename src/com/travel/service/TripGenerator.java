@@ -31,16 +31,17 @@ public final class TripGenerator {
 
     private static final double PRE_SOLD_RATIO = 0.35; // 35% pre-sold seats
 
+    // Fictional operator names adhering to Rule 4 & 4b
     private static final String[] BUS_OPERATORS = {
-            "IntrCity SmartBus", "Orange Travels", "Zingbus Express", "VRL Travels"
+            "Sahyadri Express Lines", "Nilgiri Fleetways", "Garuda Royal Coach", "Mayura Highways"
     };
 
     private static final String[] TRAIN_OPERATORS = {
-            "12951 Rajdhani Superfast", "22436 Vande Bharat Express", "12269 Duronto Express", "12002 Shatabdi Express"
+            "12105 Deccan Link Superfast", "16381 Malabar Coast Express", "12617 Konkan Star Express", "12903 Western Horizon Express"
     };
 
     private static final String[] FLIGHT_OPERATORS = {
-            "Air Bharat (AB-402)", "IndiSky (IS-512)", "StarAir Express (SE-881)", "VistaraFly (VF-811)"
+            "AeroIndia Express (AI-301)", "SkyLink Airways (SL-404)", "CloudAir Shuttle (CA-202)", "BlueSky Aviation (BA-505)"
     };
 
     private static final LocalTime[] DEPARTURE_TIMES = {
@@ -90,13 +91,13 @@ public final class TripGenerator {
 
         for (int i = 0; i < tripCount; i++) {
             String opName = getOperatorName(mode, i);
-            Transport transport = createTransport(mode, opName);
+            Transport transport = createTransport(mode, opName, distanceKm);
 
             // Update prices across layouts for this distance
             for (Map.Entry<SeatClass, SeatLayout> entry : transport.getSeatLayouts().entrySet()) {
                 SeatClass sc = entry.getKey();
                 SeatLayout layout = entry.getValue();
-                double baseFare = Math.max(sc.getMinFare(), Math.round(distanceKm * sc.getRatePerKm()));
+                double baseFare = PricingService.computeBaseFare(sc, distanceKm);
                 layout.updateAllSeatPrices(baseFare);
 
                 // Seed pre-sold seats (~35%)
@@ -130,12 +131,12 @@ public final class TripGenerator {
         }
     }
 
-    private static Transport createTransport(TransportType mode, String operatorName) {
+    private static Transport createTransport(TransportType mode, String operatorName, double distanceKm) {
         switch (mode) {
             case BUS:
                 return new Bus(operatorName);
             case TRAIN:
-                return new Train(operatorName);
+                return new Train(operatorName, distanceKm);
             case FLIGHT:
                 return new Flight(operatorName);
             default:
