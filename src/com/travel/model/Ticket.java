@@ -58,7 +58,7 @@ public class Ticket implements Serializable {
                 ConsoleColors.BOLD
         ));
         System.out.println("================================================================================");
-        System.out.printf("  PNR NUMBER     : %-20s  TICKET ID    : %s\n", booking.getPnr(), ticketId);
+        System.out.printf("  PNR: %-20s  TICKET ID    : %s\n", booking.getPnr(), ticketId);
         System.out.printf("  BOOKING TIME   : %-20s  STATUS       : %s\n",
                 issueTime.format(DATE_TIME_FORMATTER), booking.getStatus());
         System.out.println("--------------------------------------------------------------------------------");
@@ -72,6 +72,7 @@ public class Ticket implements Serializable {
                 trip.getDepartureTime().format(Trip.TIME_FORMATTER), trip.getFormattedArrival());
         System.out.printf("  TRAVEL CLASS   : %-20s  TOTAL SEATS  : %d\n",
                 booking.getSeatClass().getDisplayName(), booking.getSeats().size());
+        System.out.printf("  SEAT NUMBERS   : %s\n", String.join(", ", booking.getSeatNumbers()));
         Payment payment = booking.getPayment();
         if (payment != null) {
             System.out.printf("  PAYMENT MODE   : %-20s  PAYMENT STATUS: %s\n",
@@ -94,6 +95,7 @@ public class Ticket implements Serializable {
                 : "TOTAL FARE PAID:";
         System.out.printf("  %-16s " + ConsoleColors.colorize(Constants.CURRENCY + "%.0f", ConsoleColors.GREEN, ConsoleColors.BOLD) + " (Inclusive of GST, charges & payment fee)\n",
                 fareLabel, booking.getTotalFare());
+        System.out.println("  Keep your PNR safe. You will need it to view or cancel this ticket.");
         System.out.println("================================================================================\n");
     }
 

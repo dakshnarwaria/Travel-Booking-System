@@ -2,9 +2,11 @@ package com.travel.service;
 
 import com.travel.enums.PaymentMode;
 import com.travel.exception.PaymentFailedException;
+import com.travel.exception.TooManyInvalidAttemptsException;
 import com.travel.payment.Payment;
 import com.travel.payment.PaymentStatus;
 import com.travel.util.Constants;
+import com.travel.util.InputHelper;
 
 import java.util.Random;
 import java.util.Scanner;
@@ -18,6 +20,7 @@ public class PaymentService {
     private static final int UPI_ID_SUFFIX_RANGE = 10000;
     private static final String QR_BLOCK = "██";
     private static final String QR_EMPTY = "  ";
+    private static final int MAX_INVALID_ATTEMPTS = 5;
 
     public Payment processPayment(Payment payment, double amount, Scanner scanner, String pnr)
             throws PaymentFailedException {
@@ -77,6 +80,7 @@ public class PaymentService {
         System.out.println("UPI ID: traveler" + suffix + "@travelupi");
         printPseudoQr(pnr);
 
+        int attempts = 0;
         while (true) {
             String input = readLine(scanner, "Press Enter to simulate UPI payment (or type cancel): ");
             if ("cancel".equalsIgnoreCase(input)) {
@@ -86,6 +90,7 @@ public class PaymentService {
                 return;
             }
             System.out.println("Press Enter to continue, or type cancel.");
+            checkPromptAttempts(++attempts);
         }
     }
 
@@ -101,6 +106,7 @@ public class PaymentService {
     }
 
     private String readRequired(Scanner scanner, String prompt) throws PaymentFailedException {
+        int attempts = 0;
         while (true) {
             String input = readLine(scanner, prompt + " (or type cancel): ");
             if ("cancel".equalsIgnoreCase(input)) {
@@ -110,10 +116,12 @@ public class PaymentService {
                 return input;
             }
             System.out.println("This field cannot be empty.");
+            checkPromptAttempts(++attempts);
         }
     }
 
     private boolean readConfirmation(Scanner scanner, String prompt) throws PaymentFailedException {
+        int attempts = 0;
         while (true) {
             String input = readLine(scanner, prompt + " (y/n, or type cancel): ");
             if ("cancel".equalsIgnoreCase(input)) {
@@ -126,15 +134,18 @@ public class PaymentService {
                 return false;
             }
             System.out.println("Please answer y or n.");
+            checkPromptAttempts(++attempts);
         }
     }
 
     private String readLine(Scanner scanner, String prompt) throws PaymentFailedException {
-        System.out.print(prompt);
-        if (!scanner.hasNextLine()) {
-            throw new PaymentFailedException("Input ended before payment was completed.");
+        return InputHelper.readLine(scanner, prompt).trim();
+    }
+
+    private void checkPromptAttempts(int attempts) {
+        if (attempts >= MAX_INVALID_ATTEMPTS) {
+            throw new TooManyInvalidAttemptsException();
         }
-        return scanner.nextLine().trim();
     }
 
     private String maskCardNumber(String cardNumber) {

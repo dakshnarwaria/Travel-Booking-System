@@ -6,8 +6,10 @@ import com.travel.enums.SeatClass;
 import com.travel.enums.SeatStatus;
 import com.travel.enums.TransportType;
 import com.travel.exception.InvalidSeatException;
+import com.travel.exception.InputEndedException;
 import com.travel.exception.PaymentFailedException;
 import com.travel.exception.SeatAlreadyBookedException;
+import com.travel.exception.TooManyInvalidAttemptsException;
 import com.travel.layout.SeatLayout;
 import com.travel.model.Booking;
 import com.travel.model.City;
@@ -46,6 +48,9 @@ public class ConsoleMenu {
     private final BookingService bookingService;
     private final PaymentService paymentService;
     private final Scanner scanner;
+    private List<Seat> temporarilySelectedSeats = Collections.emptyList();
+
+    private static final int MAX_INVALID_ATTEMPTS = 5;
 
     public ConsoleMenu(CityRepository cityRepository, SearchService searchService, BookingService bookingService) {
         this.cityRepository = cityRepository;
@@ -61,23 +66,32 @@ public class ConsoleMenu {
     public void start() {
         boolean running = true;
         while (running) {
-            printMainMenu();
-            int choice = readIntSafe("Select option", 1, 4);
+            try {
+                printMainMenu();
+                int choice = readIntSafe("Select option", 1, 4);
 
-            switch (choice) {
-                case 1:
-                    executeBookingFlow();
-                    break;
-                case 2:
-                    executeViewTicket();
-                    break;
-                case 3:
-                    executeCancelTicket();
-                    break;
-                case 4:
-                    System.out.println(ConsoleColors.colorize("Thank you for using the Travel Ticket Booking System. Goodbye!", ConsoleColors.CYAN));
-                    running = false;
-                    break;
+                switch (choice) {
+                    case 1:
+                        executeBookingFlow();
+                        break;
+                    case 2:
+                        executeViewTicket();
+                        break;
+                    case 3:
+                        executeCancelTicket();
+                        break;
+                    case 4:
+                        System.out.println(ConsoleColors.colorize("Thank you for using the Travel Ticket Booking System. Goodbye!", ConsoleColors.CYAN));
+                        running = false;
+                        break;
+                }
+            } catch (TooManyInvalidAttemptsException e) {
+                releaseSelectedSeats(temporarilySelectedSeats);
+                temporarilySelectedSeats = Collections.emptyList();
+                System.out.println(ConsoleColors.colorize(
+                        "Too many invalid attempts. Returning to the main menu.",
+                        ConsoleColors.YELLOW
+                ));
             }
         }
     }
@@ -184,6 +198,7 @@ public class ConsoleMenu {
         for (Seat s : selectedSeats) {
             s.setStatus(SeatStatus.SELECTED);
         }
+        temporarilySelectedSeats = selectedSeats;
 
         // 8. Passenger Details
         System.out.println("\n" + ConsoleColors.colorize("--- STEP 6: PASSENGER DETAILS ---", ConsoleColors.YELLOW, ConsoleColors.BOLD));
@@ -199,41 +214,56 @@ public class ConsoleMenu {
             for (Seat s : selectedSeats) {
                 s.setStatus(SeatStatus.AVAILABLE);
             }
+            temporarilySelectedSeats = Collections.emptyList();
             System.out.println(ConsoleColors.colorize("Booking transaction cancelled. Seats released.", ConsoleColors.YELLOW));
             return;
         }
 
-        // 10. Payment Gateway
-        System.out.println("\n" + ConsoleColors.colorize("--- STEP 8: PAYMENT GATEWAY ---", ConsoleColors.YELLOW, ConsoleColors.BOLD));
-        PaymentMode paymentMode;
-        try {
-            paymentMode = promptPaymentMode();
-        } catch (PaymentFailedException e) {
-            releaseSelectedSeats(selectedSeats);
-            System.out.println(ConsoleColors.colorize(e.getMessage() + " Seats released.", ConsoleColors.YELLOW));
-            return;
-        }
-
-        Payment payment = PaymentFactory.createPayment(paymentMode);
-        double paymentFee = payment.getProcessingFee(totalTripFare);
-        double finalTotal = Math.round(totalTripFare + paymentFee);
-        printPaymentSummary(totalTripFare, paymentFee, finalTotal);
-
-        // 11. Confirmation & Ticket Issuance
+        // 10. Payment Gateway and Ticket Issuance
         Booking booking = bookingService.createBooking(chosenTrip, chosenClass, selectedSeats, passengers);
-        booking.setTotalFare(finalTotal);
-        booking.setPayment(payment);
-        try {
-            paymentService.processPayment(payment, finalTotal, scanner, booking.getPnr());
-        } catch (PaymentFailedException e) {
-            releaseSelectedSeats(selectedSeats);
-            System.out.println(ConsoleColors.colorize(e.getMessage() + " Booking remains unconfirmed; seats are available.", ConsoleColors.YELLOW));
-            return;
+        Payment payment;
+        double finalTotal;
+        while (true) {
+            System.out.println("\n" + ConsoleColors.colorize("--- STEP 8: PAYMENT GATEWAY ---", ConsoleColors.YELLOW, ConsoleColors.BOLD));
+            PaymentMode paymentMode;
+            try {
+                paymentMode = promptPaymentMode();
+            } catch (PaymentFailedException e) {
+                printPaymentFailure("PAYMENT CANCELLED", e.getMessage());
+                if (promptPaymentRecovery()) {
+                    continue;
+                }
+                releaseSelectedSeats(selectedSeats);
+                temporarilySelectedSeats = Collections.emptyList();
+                return;
+            }
+
+            payment = PaymentFactory.createPayment(paymentMode);
+            double paymentFee = payment.getProcessingFee(totalTripFare);
+            finalTotal = Math.round(totalTripFare + paymentFee);
+            printPaymentSummary(totalTripFare, paymentFee, finalTotal);
+            booking.setTotalFare(finalTotal);
+            booking.setPayment(payment);
+
+            try {
+                paymentService.processPayment(payment, finalTotal, scanner, booking.getPnr());
+                break;
+            } catch (PaymentFailedException e) {
+                String heading = e.getMessage().toLowerCase().contains("cancel")
+                        ? "PAYMENT CANCELLED"
+                        : "PAYMENT FAILED";
+                printPaymentFailure(heading, e.getMessage());
+                if (!promptPaymentRecovery()) {
+                    releaseSelectedSeats(selectedSeats);
+                    temporarilySelectedSeats = Collections.emptyList();
+                    return;
+                }
+            }
         }
 
         Ticket ticket = bookingService.confirmBooking(booking);
-
-        System.out.println("\n" + ConsoleColors.colorize("BOOKING CONFIRMED SUCCESSFULLY!", ConsoleColors.GREEN, ConsoleColors.BOLD));
+        temporarilySelectedSeats = Collections.emptyList();
+        printPaymentSuccess(payment, finalTotal);
         ticket.printTicket();
 
         // Redraw updated seat map showing new booked crosses
@@ -248,6 +278,7 @@ public class ConsoleMenu {
     // -------------------------------------------------------------------------
 
     private List<Seat> promptSeatSelection(SeatLayout layout) {
+        int attempts = 0;
         while (true) {
             System.out.print("\nEnter seat numbers separated by commas (max 6 seats, e.g. L1,L2 or 1A,1B): ");
             String input = readLineSafe();
@@ -258,10 +289,12 @@ public class ConsoleMenu {
             String[] tokens = input.split(",");
             if (tokens.length == 0 || input.trim().isEmpty()) {
                 System.out.println(ConsoleColors.colorize("Please enter at least one seat number.", ConsoleColors.RED));
+                checkPromptAttempts(++attempts);
                 continue;
             }
             if (tokens.length > 6) {
                 System.out.println(ConsoleColors.colorize("You can book a maximum of 6 seats per transaction. Provided: " + tokens.length, ConsoleColors.RED));
+                checkPromptAttempts(++attempts);
                 continue;
             }
 
@@ -295,6 +328,7 @@ public class ConsoleMenu {
                 return validated;
             }
             System.out.println(ConsoleColors.colorize("Please re-enter your seat selection.", ConsoleColors.YELLOW));
+            checkPromptAttempts(++attempts);
         }
     }
 
@@ -339,6 +373,7 @@ public class ConsoleMenu {
 
     private PaymentMode promptPaymentMode() throws PaymentFailedException {
         PaymentMode[] paymentModes = PaymentMode.values();
+        int attempts = 0;
         System.out.println("Choose payment method:");
         for (int i = 0; i < paymentModes.length; i++) {
             System.out.printf("  %d. %s%n", i + 1, paymentModes[i].getDisplayName());
@@ -346,9 +381,6 @@ public class ConsoleMenu {
 
         while (true) {
             System.out.print("Select payment method (or type cancel): ");
-            if (!scanner.hasNextLine()) {
-                throw new PaymentFailedException("Input ended before a payment method was selected.");
-            }
             String input = readLineSafe();
             if ("cancel".equalsIgnoreCase(input)) {
                 throw new PaymentFailedException("Payment was cancelled by the user.");
@@ -362,6 +394,7 @@ public class ConsoleMenu {
                 // Retry with a clear message; no booking state has been committed.
             }
             System.out.println(ConsoleColors.colorize("Select a valid payment option.", ConsoleColors.RED));
+            checkPromptAttempts(++attempts);
         }
     }
 
@@ -371,6 +404,71 @@ public class ConsoleMenu {
         System.out.printf("  Payment-mode fee   : %s%.0f%n", Constants.CURRENCY, paymentFee);
         System.out.printf("  FINAL TOTAL        : %s%.0f%n", Constants.CURRENCY, finalTotal);
         System.out.println("--------------------------------------------------------------------------------");
+    }
+
+    private void printPaymentSuccess(Payment payment, double finalTotal) {
+        System.out.println();
+        List<String> lines = new ArrayList<>();
+        if (payment.getPaymentMode() == PaymentMode.CASH) {
+            lines.add("BOOKING CONFIRMED - PAY AT ARRIVAL");
+            lines.add("Amount to pay: " + Constants.CURRENCY + String.format("%.0f", finalTotal));
+        } else {
+            lines.add("PAYMENT SUCCESSFUL");
+            lines.add("Payment mode: " + payment.getPaymentMode().getDisplayName());
+            lines.add("Amount paid: " + Constants.CURRENCY + String.format("%.0f", finalTotal));
+        }
+        lines.add("Transaction ID: " + payment.getTransactionId());
+        lines.add("Thank you for booking with us!");
+        printPaymentBox(lines, ConsoleColors.GREEN);
+    }
+
+    private void printPaymentFailure(String heading, String reason) {
+        System.out.println();
+        List<String> lines = new ArrayList<>();
+        lines.add(heading);
+        lines.add("Reason: " + reason);
+        lines.add("No seats were booked.");
+        printPaymentBox(lines, ConsoleColors.RED);
+        System.out.println("  1. Try another payment method");
+        System.out.println("  2. Return to the main menu");
+    }
+
+    private void printPaymentBox(List<String> lines, String color) {
+        int width = 78;
+        for (String line : lines) {
+            width = Math.max(width, line.length() + 4);
+        }
+        String border = "+" + repeat('-', width - 2) + "+";
+        System.out.println(ConsoleColors.colorize(border, color));
+        for (String line : lines) {
+            System.out.println(ConsoleColors.colorize(
+                    String.format("| %-"+(width - 4)+"s |", line), color));
+        }
+        System.out.println(ConsoleColors.colorize(border, color));
+    }
+
+    private boolean promptPaymentRecovery() {
+        int attempts = 0;
+        while (true) {
+            System.out.print("Select option [1-2]: ");
+            String input = readLineSafe();
+            if ("1".equals(input)) {
+                return true;
+            }
+            if ("2".equals(input)) {
+                return false;
+            }
+            System.out.println(ConsoleColors.colorize("Enter 1 to retry or 2 to return to the main menu.", ConsoleColors.RED));
+            checkPromptAttempts(++attempts);
+        }
+    }
+
+    private String repeat(char character, int count) {
+        StringBuilder repeated = new StringBuilder(count);
+        for (int i = 0; i < count; i++) {
+            repeated.append(character);
+        }
+        return repeated.toString();
     }
 
     private void releaseSelectedSeats(List<Seat> seats) {
@@ -432,6 +530,7 @@ public class ConsoleMenu {
     // -------------------------------------------------------------------------
 
     private City promptCitySelection(String label) {
+        int attempts = 0;
         while (true) {
             System.out.printf("Enter %s city name or prefix (e.g. Mum, Hyd, Delhi): ", label);
             String input = readLineSafe();
@@ -443,6 +542,7 @@ public class ConsoleMenu {
             List<City> matches = cityRepository.searchByNamePrefix(input);
             if (matches.isEmpty()) {
                 System.out.println(ConsoleColors.colorize("No city found matching '" + input + "'. Try again.", ConsoleColors.RED));
+                checkPromptAttempts(++attempts);
                 continue;
             }
             if (matches.size() == 1) {
@@ -459,6 +559,7 @@ public class ConsoleMenu {
     }
 
     private LocalDate promptTravelDate() {
+        int attempts = 0;
         while (true) {
             System.out.print("Enter travel date (dd-MM-yyyy): ");
             String str = readLineSafe();
@@ -468,16 +569,19 @@ public class ConsoleMenu {
                 LocalDate today = LocalDate.now();
                 if (date.isBefore(today)) {
                     System.out.println(ConsoleColors.colorize("Travel date cannot be in the past.", ConsoleColors.RED));
+                    checkPromptAttempts(++attempts);
                     continue;
                 }
                 return date;
-            } catch (Exception e) {
+            } catch (java.time.format.DateTimeParseException e) {
                 System.out.println(ConsoleColors.colorize("Invalid format. Expected dd-MM-yyyy (e.g. 05-11-2026).", ConsoleColors.RED));
+                checkPromptAttempts(++attempts);
             }
         }
     }
 
     private String promptGender() {
+        int attempts = 0;
         while (true) {
             System.out.print("  Passenger Gender (M/F/O): ");
             String g = readLineSafe().toUpperCase();
@@ -485,29 +589,35 @@ public class ConsoleMenu {
             if (g.equals("F") || g.startsWith("FEMALE")) return "Female";
             if (g.equals("O") || g.startsWith("OTHER")) return "Other";
             System.out.println(ConsoleColors.colorize("Please enter M, F, or O.", ConsoleColors.RED));
+            checkPromptAttempts(++attempts);
         }
     }
 
     private String promptNonEmpty(String prompt) {
+        int attempts = 0;
         while (true) {
             System.out.print(prompt + ": ");
             String val = readLineSafe();
             if (!val.isEmpty()) return val;
             System.out.println(ConsoleColors.colorize("Value cannot be blank.", ConsoleColors.RED));
+            checkPromptAttempts(++attempts);
         }
     }
 
     private boolean promptConfirmation(String prompt) {
+        int attempts = 0;
         while (true) {
             System.out.print(prompt + " (y/n): ");
             String resp = readLineSafe().toLowerCase();
             if (resp.equals("y") || resp.equals("yes")) return true;
             if (resp.equals("n") || resp.equals("no")) return false;
             System.out.println(ConsoleColors.colorize("Please respond with 'y' or 'n'.", ConsoleColors.RED));
+            checkPromptAttempts(++attempts);
         }
     }
 
     private int readIntSafe(String prompt, int min, int max) {
+        int attempts = 0;
         while (true) {
             System.out.printf("%s [%d-%d]: ", prompt, min, max);
             String line = readLineSafe();
@@ -515,16 +625,21 @@ public class ConsoleMenu {
                 int val = Integer.parseInt(line);
                 if (val >= min && val <= max) return val;
                 System.out.printf(ConsoleColors.colorize("Number must be between %d and %d.\n", ConsoleColors.RED), min, max);
+                checkPromptAttempts(++attempts);
             } catch (NumberFormatException e) {
                 System.out.println(ConsoleColors.colorize("Invalid integer. Please enter digits only.", ConsoleColors.RED));
+                checkPromptAttempts(++attempts);
             }
         }
     }
 
     private String readLineSafe() {
-        if (scanner.hasNextLine()) {
-            return scanner.nextLine().trim();
+        return InputHelper.readLine(scanner, null).trim();
+    }
+
+    private void checkPromptAttempts(int attempts) {
+        if (attempts >= MAX_INVALID_ATTEMPTS) {
+            throw new TooManyInvalidAttemptsException();
         }
-        return "";
     }
 }

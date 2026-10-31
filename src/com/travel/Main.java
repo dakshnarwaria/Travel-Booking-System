@@ -12,6 +12,8 @@ import com.travel.layout.SleeperDeckLayout;
 import com.travel.model.City;
 import com.travel.model.Route;
 import com.travel.model.Trip;
+import com.travel.exception.InputEndedException;
+import com.travel.exception.TooManyInvalidAttemptsException;
 import com.travel.repository.CityRepository;
 import com.travel.seat.Seat;
 import com.travel.service.BookingService;
@@ -53,6 +55,19 @@ public class Main {
             System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err), true, StandardCharsets.UTF_8));
         } catch (Exception ignored) {}
 
+        try {
+            run(args);
+        } catch (InputEndedException e) {
+            System.out.println(ConsoleColors.colorize("Input ended. Exiting.", ConsoleColors.YELLOW));
+        } catch (TooManyInvalidAttemptsException e) {
+            System.out.println(ConsoleColors.colorize(
+                    "Too many invalid attempts. Returning to the main menu.",
+                    ConsoleColors.YELLOW
+            ));
+        }
+    }
+
+    private static void run(String[] args) {
         if (args.length == 0) {
             printUsageHelp();
             return;
