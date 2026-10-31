@@ -2,6 +2,7 @@ package com.travel.model;
 
 import com.travel.enums.BookingStatus;
 import com.travel.enums.SeatClass;
+import com.travel.payment.Payment;
 import com.travel.seat.Seat;
 
 import java.io.Serializable;
@@ -28,6 +29,7 @@ public class Booking implements Serializable {
     private final List<Passenger> passengers;
     private double totalFare;
     private BookingStatus status;
+    private Payment payment;
     private final LocalDateTime bookingTime;
 
     public Booking(String pnr, Trip trip, SeatClass seatClass, List<Seat> seats,
@@ -68,6 +70,14 @@ public class Booking implements Serializable {
 
     public void setTotalFare(double totalFare) {
         this.totalFare = totalFare;
+    }
+
+    public Payment getPayment() {
+        return payment;
+    }
+
+    public void setPayment(Payment payment) {
+        this.payment = payment;
     }
 
     public BookingStatus getStatus() {

@@ -15,6 +15,10 @@ public final class IdGenerator {
     private static final String TICKET_PREFIX = "TKT";
     private static final AtomicInteger TICKET_COUNTER = new AtomicInteger(1001);
 
+    private static final String TRANSACTION_PREFIX = "TXN";
+    private static final int INITIAL_TRANSACTION_SEQUENCE = 50001;
+    private static final AtomicInteger TRANSACTION_COUNTER = new AtomicInteger(INITIAL_TRANSACTION_SEQUENCE);
+
     private IdGenerator() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
@@ -33,6 +37,10 @@ public final class IdGenerator {
      */
     public static String generateTicketId() {
         return TICKET_PREFIX + "-" + TICKET_COUNTER.getAndIncrement();
+    }
+
+    public static String generateTransactionId() {
+        return TRANSACTION_PREFIX + "-" + TRANSACTION_COUNTER.getAndIncrement();
     }
 
     /**

@@ -10,6 +10,7 @@ import com.travel.model.Booking;
 import com.travel.model.Passenger;
 import com.travel.model.Ticket;
 import com.travel.model.Trip;
+import com.travel.payment.PaymentStatus;
 import com.travel.seat.Seat;
 import com.travel.util.IdGenerator;
 
@@ -122,6 +123,16 @@ public class BookingService {
      */
     public Ticket confirmBooking(Booking booking) {
         if (booking == null) return null;
+        if (booking.getPayment() == null
+                || (booking.getPayment().getStatus() != PaymentStatus.PAID
+                && booking.getPayment().getStatus() != PaymentStatus.PAY_AT_ARRIVAL)) {
+            throw new IllegalStateException("A booking can only be confirmed after successful payment.");
+        }
+        for (Seat seat : booking.getSeats()) {
+            if (seat.getStatus() == SeatStatus.BOOKED) {
+                throw new IllegalStateException("Seat " + seat.getSeatNumber() + " was booked before confirmation.");
+            }
+        }
 
         // Transition status and commit seat reservations
         booking.setStatus(BookingStatus.CONFIRMED);

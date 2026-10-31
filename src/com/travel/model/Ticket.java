@@ -4,6 +4,8 @@ import com.travel.enums.BookingStatus;
 import com.travel.util.ConsoleColors;
 import com.travel.util.Constants;
 import com.travel.util.IdGenerator;
+import com.travel.payment.Payment;
+import com.travel.payment.PaymentStatus;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -70,6 +72,12 @@ public class Ticket implements Serializable {
                 trip.getDepartureTime().format(Trip.TIME_FORMATTER), trip.getFormattedArrival());
         System.out.printf("  TRAVEL CLASS   : %-20s  TOTAL SEATS  : %d\n",
                 booking.getSeatClass().getDisplayName(), booking.getSeats().size());
+        Payment payment = booking.getPayment();
+        if (payment != null) {
+            System.out.printf("  PAYMENT MODE   : %-20s  PAYMENT STATUS: %s\n",
+                    payment.getPaymentMode().getDisplayName(), payment.getStatus());
+            System.out.printf("  TRANSACTION ID : %s\n", payment.getTransactionId());
+        }
         System.out.println("--------------------------------------------------------------------------------");
         System.out.println(ConsoleColors.colorize("  PASSENGER MANIFEST:", ConsoleColors.WHITE, ConsoleColors.BOLD));
 
@@ -81,7 +89,11 @@ public class Ticket implements Serializable {
         }
 
         System.out.println("--------------------------------------------------------------------------------");
-        System.out.printf("  TOTAL FARE PAID: " + ConsoleColors.colorize(Constants.CURRENCY + "%.0f", ConsoleColors.GREEN, ConsoleColors.BOLD) + " (Inclusive of GST & charges)\n", booking.getTotalFare());
+        String fareLabel = payment != null && payment.getStatus() == PaymentStatus.PAY_AT_ARRIVAL
+                ? "TOTAL FARE DUE:"
+                : "TOTAL FARE PAID:";
+        System.out.printf("  %-16s " + ConsoleColors.colorize(Constants.CURRENCY + "%.0f", ConsoleColors.GREEN, ConsoleColors.BOLD) + " (Inclusive of GST, charges & payment fee)\n",
+                fareLabel, booking.getTotalFare());
         System.out.println("================================================================================\n");
     }
 

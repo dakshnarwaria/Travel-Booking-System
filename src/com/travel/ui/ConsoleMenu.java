@@ -1,10 +1,12 @@
 package com.travel.ui;
 
 import com.travel.enums.BookingStatus;
+import com.travel.enums.PaymentMode;
 import com.travel.enums.SeatClass;
 import com.travel.enums.SeatStatus;
 import com.travel.enums.TransportType;
 import com.travel.exception.InvalidSeatException;
+import com.travel.exception.PaymentFailedException;
 import com.travel.exception.SeatAlreadyBookedException;
 import com.travel.layout.SeatLayout;
 import com.travel.model.Booking;
@@ -13,6 +15,9 @@ import com.travel.model.Passenger;
 import com.travel.model.Route;
 import com.travel.model.Ticket;
 import com.travel.model.Trip;
+import com.travel.payment.Payment;
+import com.travel.payment.PaymentFactory;
+import com.travel.service.PaymentService;
 import com.travel.repository.CityRepository;
 import com.travel.seat.Seat;
 import com.travel.service.BookingService;
@@ -39,12 +44,14 @@ public class ConsoleMenu {
     private final CityRepository cityRepository;
     private final SearchService searchService;
     private final BookingService bookingService;
+    private final PaymentService paymentService;
     private final Scanner scanner;
 
     public ConsoleMenu(CityRepository cityRepository, SearchService searchService, BookingService bookingService) {
         this.cityRepository = cityRepository;
         this.searchService = searchService;
         this.bookingService = bookingService;
+        this.paymentService = new PaymentService();
         this.scanner = new Scanner(System.in);
     }
 
@@ -196,12 +203,34 @@ public class ConsoleMenu {
             return;
         }
 
-        // 10. Payment Gateway (Stubbed for Phase 5)
-        System.out.println("\n" + ConsoleColors.colorize("--- STEP 8: PAYMENT GATEWAY (SIMULATED) ---", ConsoleColors.YELLOW, ConsoleColors.BOLD));
-        System.out.println("Processing transaction of " + Constants.CURRENCY + Math.round(totalTripFare) + " ... [SUCCESS]");
+        // 10. Payment Gateway
+        System.out.println("\n" + ConsoleColors.colorize("--- STEP 8: PAYMENT GATEWAY ---", ConsoleColors.YELLOW, ConsoleColors.BOLD));
+        PaymentMode paymentMode;
+        try {
+            paymentMode = promptPaymentMode();
+        } catch (PaymentFailedException e) {
+            releaseSelectedSeats(selectedSeats);
+            System.out.println(ConsoleColors.colorize(e.getMessage() + " Seats released.", ConsoleColors.YELLOW));
+            return;
+        }
+
+        Payment payment = PaymentFactory.createPayment(paymentMode);
+        double paymentFee = payment.getProcessingFee(totalTripFare);
+        double finalTotal = Math.round(totalTripFare + paymentFee);
+        printPaymentSummary(totalTripFare, paymentFee, finalTotal);
 
         // 11. Confirmation & Ticket Issuance
         Booking booking = bookingService.createBooking(chosenTrip, chosenClass, selectedSeats, passengers);
+        booking.setTotalFare(finalTotal);
+        booking.setPayment(payment);
+        try {
+            paymentService.processPayment(payment, finalTotal, scanner, booking.getPnr());
+        } catch (PaymentFailedException e) {
+            releaseSelectedSeats(selectedSeats);
+            System.out.println(ConsoleColors.colorize(e.getMessage() + " Booking remains unconfirmed; seats are available.", ConsoleColors.YELLOW));
+            return;
+        }
+
         Ticket ticket = bookingService.confirmBooking(booking);
 
         System.out.println("\n" + ConsoleColors.colorize("BOOKING CONFIRMED SUCCESSFULLY!", ConsoleColors.GREEN, ConsoleColors.BOLD));
@@ -308,6 +337,48 @@ public class ConsoleMenu {
         return totalSum;
     }
 
+    private PaymentMode promptPaymentMode() throws PaymentFailedException {
+        PaymentMode[] paymentModes = PaymentMode.values();
+        System.out.println("Choose payment method:");
+        for (int i = 0; i < paymentModes.length; i++) {
+            System.out.printf("  %d. %s%n", i + 1, paymentModes[i].getDisplayName());
+        }
+
+        while (true) {
+            System.out.print("Select payment method (or type cancel): ");
+            if (!scanner.hasNextLine()) {
+                throw new PaymentFailedException("Input ended before a payment method was selected.");
+            }
+            String input = readLineSafe();
+            if ("cancel".equalsIgnoreCase(input)) {
+                throw new PaymentFailedException("Payment was cancelled by the user.");
+            }
+            try {
+                int choice = Integer.parseInt(input);
+                if (choice >= 1 && choice <= paymentModes.length) {
+                    return paymentModes[choice - 1];
+                }
+            } catch (NumberFormatException ignored) {
+                // Retry with a clear message; no booking state has been committed.
+            }
+            System.out.println(ConsoleColors.colorize("Select a valid payment option.", ConsoleColors.RED));
+        }
+    }
+
+    private void printPaymentSummary(double fare, double paymentFee, double finalTotal) {
+        System.out.println("--------------------------------------------------------------------------------");
+        System.out.printf("  Booking fare       : %s%.0f%n", Constants.CURRENCY, fare);
+        System.out.printf("  Payment-mode fee   : %s%.0f%n", Constants.CURRENCY, paymentFee);
+        System.out.printf("  FINAL TOTAL        : %s%.0f%n", Constants.CURRENCY, finalTotal);
+        System.out.println("--------------------------------------------------------------------------------");
+    }
+
+    private void releaseSelectedSeats(List<Seat> seats) {
+        for (Seat seat : seats) {
+            seat.setStatus(SeatStatus.AVAILABLE);
+        }
+    }
+
     // -------------------------------------------------------------------------
     // View and Cancel Flows
     // -------------------------------------------------------------------------
@@ -319,6 +390,10 @@ public class ConsoleMenu {
         Booking booking = bookingService.getBookingByPnr(pnr);
         if (booking == null) {
             System.out.println(ConsoleColors.colorize("No booking found with PNR: " + pnr, ConsoleColors.RED));
+            return;
+        }
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            System.out.println(ConsoleColors.colorize("Booking " + pnr + " is not confirmed.", ConsoleColors.YELLOW));
             return;
         }
         Ticket ticket = new Ticket(booking);
