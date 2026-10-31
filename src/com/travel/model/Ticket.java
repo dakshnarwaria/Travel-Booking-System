@@ -2,6 +2,7 @@ package com.travel.model;
 
 import com.travel.enums.BookingStatus;
 import com.travel.util.ConsoleColors;
+import com.travel.util.Constants;
 import com.travel.util.IdGenerator;
 
 import java.io.Serializable;
@@ -80,7 +81,7 @@ public class Ticket implements Serializable {
         }
 
         System.out.println("--------------------------------------------------------------------------------");
-        System.out.printf("  TOTAL FARE PAID: " + ConsoleColors.colorize("₹%.0f", ConsoleColors.GREEN, ConsoleColors.BOLD) + " (Inclusive of GST & charges)\n", booking.getTotalFare());
+        System.out.printf("  TOTAL FARE PAID: " + ConsoleColors.colorize(Constants.CURRENCY + "%.0f", ConsoleColors.GREEN, ConsoleColors.BOLD) + " (Inclusive of GST & charges)\n", booking.getTotalFare());
         System.out.println("================================================================================\n");
     }
 

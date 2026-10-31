@@ -4,6 +4,7 @@ import com.travel.enums.SeatClass;
 import com.travel.enums.TransportType;
 import com.travel.seat.ChairSeat;
 import com.travel.seat.Seat;
+import com.travel.util.Constants;
 
 import java.io.Serializable;
 
@@ -83,7 +84,7 @@ public final class PricingService {
 
         @Override
         public String toString() {
-            return String.format("Base: ₹%.0f, Res/Airport: ₹%.0f, GST: ₹%.0f, Conv: ₹%.0f, Addon: ₹%.0f => Total: ₹%.0f",
+            return String.format("Base: " + Constants.CURRENCY + "%.0f, Res/Airport: " + Constants.CURRENCY + "%.0f, GST: " + Constants.CURRENCY + "%.0f, Conv: " + Constants.CURRENCY + "%.0f, Addon: " + Constants.CURRENCY + "%.0f => Total: " + Constants.CURRENCY + "%.0f",
                     baseFare, (reservationFee + airportFee), gstAmount, convenienceFee, seatAddOn, totalFare);
         }
     }

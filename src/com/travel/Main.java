@@ -22,7 +22,12 @@ import com.travel.transport.Train;
 import com.travel.ui.ConsoleMenu;
 import com.travel.ui.SeatMapRenderer;
 import com.travel.util.ConsoleColors;
+import com.travel.util.Constants;
 
+import java.io.FileDescriptor;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -42,6 +47,12 @@ public class Main {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     public static void main(String[] args) {
+        // Force UTF-8 on stdout and stderr so ₹ renders correctly on Windows
+        try {
+            System.setOut(new PrintStream(new FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8));
+            System.setErr(new PrintStream(new FileOutputStream(FileDescriptor.err), true, StandardCharsets.UTF_8));
+        } catch (Exception ignored) {}
+
         if (args.length == 0) {
             printUsageHelp();
             return;
@@ -165,8 +176,8 @@ public class Main {
                 PricingService.FareBreakdown fb = PricingService.calculateFare(sc, dist, null);
                 double resOrAir = fb.getReservationFee() + fb.getAirportFee();
 
-                System.out.printf("%-8s | %-16s | ₹%-9.0f | ₹%-11.0f | ₹%-7.0f | ₹%-11.0f | " +
-                                ConsoleColors.colorize("₹%-9.0f", (sc.isPremium() ? ConsoleColors.COLOR_PREMIUM : ConsoleColors.COLOR_STANDARD), ConsoleColors.BOLD) + "\n",
+                System.out.printf("%-8s | %-16s | " + Constants.CURRENCY + "%-9.0f | " + Constants.CURRENCY + "%-11.0f | " + Constants.CURRENCY + "%-7.0f | " + Constants.CURRENCY + "%-11.0f | " +
+                                ConsoleColors.colorize(Constants.CURRENCY + "%-9.0f", (sc.isPremium() ? ConsoleColors.COLOR_PREMIUM : ConsoleColors.COLOR_STANDARD), ConsoleColors.BOLD) + "\n",
                         mode.getDisplayName(), sc.getDisplayName(),
                         fb.getBaseFare(), resOrAir, fb.getGstAmount(), fb.getConvenienceFee(), fb.getTotalFare());
             }

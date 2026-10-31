@@ -19,6 +19,7 @@ import com.travel.service.BookingService;
 import com.travel.service.PricingService;
 import com.travel.service.SearchService;
 import com.travel.util.ConsoleColors;
+import com.travel.util.Constants;
 import com.travel.util.InputHelper;
 
 import java.time.LocalDate;
@@ -150,7 +151,7 @@ public class ConsoleMenu {
         List<SearchService.ClassFareInfo> classInfos = searchService.getClassesForTrip(chosenTrip);
         for (int i = 0; i < classInfos.size(); i++) {
             SearchService.ClassFareInfo cfi = classInfos.get(i);
-            System.out.printf("  %d. %-18s | Starting Fare: ₹%-5.0f | Vacant Seats: %d/%d\n",
+            System.out.printf("  %d. %-18s | Starting Fare: " + Constants.CURRENCY + "%-5.0f | Vacant Seats: %d/%d\n",
                     (i + 1), cfi.getSeatClass().getDisplayName(), cfi.getStartingFare(),
                     cfi.getSeatsLeft(), cfi.getTotalSeats());
         }
@@ -197,7 +198,7 @@ public class ConsoleMenu {
 
         // 10. Payment Gateway (Stubbed for Phase 5)
         System.out.println("\n" + ConsoleColors.colorize("--- STEP 8: PAYMENT GATEWAY (SIMULATED) ---", ConsoleColors.YELLOW, ConsoleColors.BOLD));
-        System.out.println("Processing transaction of ₹" + Math.round(totalTripFare) + " ... [SUCCESS]");
+        System.out.println("Processing transaction of " + Constants.CURRENCY + Math.round(totalTripFare) + " ... [SUCCESS]");
 
         // 11. Confirmation & Ticket Issuance
         Booking booking = bookingService.createBooking(chosenTrip, chosenClass, selectedSeats, passengers);
@@ -291,18 +292,18 @@ public class ConsoleMenu {
         for (int i = 0; i < seats.size(); i++) {
             Seat s = seats.get(i);
             PricingService.FareBreakdown fb = PricingService.calculateFare(sc, distanceKm, s);
-            System.out.printf("   * Seat %-4s: Base ₹%.0f + Res/Airport ₹%.0f + GST ₹%.0f + Conv ₹%.0f",
+            System.out.printf("   * Seat %-4s: Base " + Constants.CURRENCY + "%.0f + Res/Airport " + Constants.CURRENCY + "%.0f + GST " + Constants.CURRENCY + "%.0f + Conv " + Constants.CURRENCY + "%.0f",
                     s.getSeatNumber(), fb.getBaseFare(), (fb.getReservationFee() + fb.getAirportFee()),
                     fb.getGstAmount(), fb.getConvenienceFee());
             if (fb.getSeatAddOn() > 0) {
-                System.out.printf(" + Addon ₹%.0f", fb.getSeatAddOn());
+                System.out.printf(" + Addon " + Constants.CURRENCY + "%.0f", fb.getSeatAddOn());
             }
-            System.out.printf(" => ₹%.0f\n", fb.getTotalFare());
+            System.out.printf(" => " + Constants.CURRENCY + "%.0f\n", fb.getTotalFare());
             totalSum += fb.getTotalFare();
         }
 
         System.out.println("--------------------------------------------------------------------------------");
-        System.out.printf("  FINAL AMOUNT DUE: " + ConsoleColors.colorize("₹%.0f", ConsoleColors.GREEN, ConsoleColors.BOLD) + "\n", totalSum);
+        System.out.printf("  FINAL AMOUNT DUE: " + ConsoleColors.colorize(Constants.CURRENCY + "%.0f", ConsoleColors.GREEN, ConsoleColors.BOLD) + "\n", totalSum);
         System.out.println("--------------------------------------------------------------------------------");
         return totalSum;
     }

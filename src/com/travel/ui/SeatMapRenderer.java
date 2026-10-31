@@ -12,6 +12,7 @@ import com.travel.layout.SleeperDeckLayout;
 import com.travel.seat.Seat;
 import com.travel.seat.SleeperSeat;
 import com.travel.util.ConsoleColors;
+import com.travel.util.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +53,7 @@ public final class SeatMapRenderer {
             rawLines.add("│" + padString(seat.getSeatNumber(), 5) + "│");
             rawLines.add(booked ? "│     │" : "│ === │");
             rawLines.add("└─────┘");
-            String priceStr = booked ? "Sold" : ("₹" + Math.round(seat.getPrice()));
+            String priceStr = booked ? "Sold" : (currencyPrefix() + Math.round(seat.getPrice()));
             rawLines.add(padString(priceStr, SLEEPER_WIDTH));
         } else {
             // Chair block: 6 wide, 3 box lines + 1 price line
@@ -60,7 +61,7 @@ public final class SeatMapRenderer {
             String numStr = booked ? ("X" + seat.getSeatNumber()) : seat.getSeatNumber();
             rawLines.add("│" + padString(numStr, 4) + "│");
             rawLines.add("└────┘");
-            String priceStr = booked ? "Sold" : ("₹" + Math.round(seat.getPrice()));
+            String priceStr = booked ? "Sold" : (currencyPrefix() + Math.round(seat.getPrice()));
             rawLines.add(padString(priceStr, CHAIR_WIDTH));
         }
 
@@ -327,7 +328,7 @@ public final class SeatMapRenderer {
 
         for (int r = 0; r < totalRows; r++) {
             if (!isBusiness && r == 5) {
-                System.out.println(ConsoleColors.colorize("--- EXIT ROW (+₹400) --------------------------------", ConsoleColors.YELLOW));
+                System.out.println(ConsoleColors.colorize("--- EXIT ROW (+" + currencyPrefix() + "400) --------------------------------", ConsoleColors.YELLOW));
             }
 
             List<List<String>> rowBlocks = new ArrayList<>();
@@ -356,6 +357,18 @@ public final class SeatMapRenderer {
             System.out.println(sb.toString());
         }
         System.out.println();
+    }
+
+    // -------------------------------------------------------------------------
+    // Currency Helper
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns "Rs " in --ascii mode (pure ASCII), or the rupee symbol otherwise.
+     * Keeps ALL other output identical — only the currency prefix changes.
+     */
+    private static String currencyPrefix() {
+        return ConsoleColors.isAsciiMode() ? "Rs " : Constants.CURRENCY;
     }
 
     // -------------------------------------------------------------------------
