@@ -8,6 +8,8 @@ import com.travel.exception.PaymentFailedException;
  */
 public class CashPayment extends Payment {
 
+    private static final long serialVersionUID = 1L;
+
     public static final double PROCESSING_FEE = 30.0;
 
     public CashPayment() {

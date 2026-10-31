@@ -11,6 +11,7 @@ import com.travel.model.Passenger;
 import com.travel.model.Ticket;
 import com.travel.model.Trip;
 import com.travel.payment.PaymentStatus;
+import com.travel.repository.BookingRepository;
 import com.travel.seat.Seat;
 import com.travel.util.IdGenerator;
 
@@ -29,8 +30,14 @@ public class BookingService {
 
     private final Map<String, Booking> bookingRegistry = new HashMap<>();
     private final Map<String, List<Trip>> sessionTripCache = new HashMap<>();
+    private final BookingRepository bookingRepository;
 
-    public BookingService() {}
+    public BookingService() {
+        bookingRepository = BookingRepository.getInstance();
+        for (Booking booking : bookingRepository.getAllBookings()) {
+            bookingRegistry.put(normalizePnr(booking.getPnr()), booking);
+        }
+    }
 
     /**
      * Session cache ensuring modified seat states persist across searches in the same runtime session.
@@ -44,6 +51,9 @@ public class BookingService {
 
         if (!sessionTripCache.containsKey(key)) {
             List<Trip> generated = TripGenerator.generateTrips(route, date);
+            for (Trip trip : generated) {
+                bookingRepository.applySavedSeats(trip);
+            }
             sessionTripCache.put(key, generated);
         }
         return sessionTripCache.get(key);
@@ -139,16 +149,59 @@ public class BookingService {
         for (Seat seat : booking.getSeats()) {
             seat.setStatus(SeatStatus.BOOKED);
         }
+        try {
+            bookingRepository.saveBooking(booking);
+        } catch (IllegalStateException e) {
+            booking.setStatus(BookingStatus.PENDING);
+            for (Seat seat : booking.getSeats()) {
+                seat.setStatus(SeatStatus.SELECTED);
+            }
+            throw e;
+        }
 
         return new Ticket(booking);
     }
 
+    public void cancelBooking(Booking booking) {
+        if (booking == null || booking.getStatus() != BookingStatus.CONFIRMED) {
+            throw new IllegalStateException("Only a confirmed booking can be cancelled.");
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        for (Seat seat : booking.getSeats()) {
+            seat.cancel();
+        }
+        try {
+            bookingRepository.saveBooking(booking);
+        } catch (IllegalStateException e) {
+            booking.setStatus(BookingStatus.CONFIRMED);
+            for (Seat seat : booking.getSeats()) {
+                seat.setStatus(SeatStatus.BOOKED);
+            }
+            throw e;
+        }
+    }
+
     public Booking getBookingByPnr(String pnr) {
         if (pnr == null) return null;
-        return bookingRegistry.get(pnr.trim().toUpperCase());
+        return bookingRegistry.get(normalizePnr(pnr));
     }
 
     public Map<String, Booking> getAllBookings() {
         return Collections.unmodifiableMap(bookingRegistry);
+    }
+
+    private String normalizePnr(String pnr) {
+        String normalized = pnr.trim().toUpperCase();
+        if (normalized.startsWith("TRV-")) {
+            return normalized;
+        }
+        if (normalized.startsWith("TRV")) {
+            normalized = normalized.substring("TRV".length());
+            if (normalized.startsWith("-")) {
+                normalized = normalized.substring(1);
+            }
+        }
+        return "TRV-" + normalized;
     }
 }

@@ -19,8 +19,12 @@ import com.travel.model.Ticket;
 import com.travel.model.Trip;
 import com.travel.payment.Payment;
 import com.travel.payment.PaymentFactory;
+import com.travel.payment.PaymentStatus;
+import com.travel.service.CashRefundPolicy;
 import com.travel.service.PaymentService;
 import com.travel.repository.CityRepository;
+import com.travel.service.RefundPolicy;
+import com.travel.service.TimeBasedRefundPolicy;
 import com.travel.seat.Seat;
 import com.travel.service.BookingService;
 import com.travel.service.PricingService;
@@ -32,6 +36,7 @@ import com.travel.util.InputHelper;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -68,7 +73,7 @@ public class ConsoleMenu {
         while (running) {
             try {
                 printMainMenu();
-                int choice = readIntSafe("Select option", 1, 4);
+                int choice = readIntSafe("Select option", 1, 5);
 
                 switch (choice) {
                     case 1:
@@ -78,9 +83,12 @@ public class ConsoleMenu {
                         executeViewTicket();
                         break;
                     case 3:
-                        executeCancelTicket();
+                        executeMyBookings();
                         break;
                     case 4:
+                        executeCancelTicket();
+                        break;
+                    case 5:
                         System.out.println(ConsoleColors.colorize("Thank you for using the Travel Ticket Booking System. Goodbye!", ConsoleColors.CYAN));
                         running = false;
                         break;
@@ -102,8 +110,9 @@ public class ConsoleMenu {
         System.out.println("================================================================================");
         System.out.println("  1. Book Travel Ticket");
         System.out.println("  2. View Ticket by PNR");
-        System.out.println("  3. Cancel Ticket");
-        System.out.println("  4. Exit System");
+        System.out.println("  3. My Bookings");
+        System.out.println("  4. Cancel Ticket");
+        System.out.println("  5. Exit System");
         System.out.println("--------------------------------------------------------------------------------");
     }
 
@@ -483,46 +492,193 @@ public class ConsoleMenu {
 
     private void executeViewTicket() {
         System.out.println("\n" + ConsoleColors.colorize("--- VIEW TICKET BY PNR ---", ConsoleColors.YELLOW, ConsoleColors.BOLD));
-        System.out.print("Enter PNR number: ");
+        System.out.print("Enter PNR number (for example TRV-10001 or 10001): ");
         String pnr = readLineSafe();
         Booking booking = bookingService.getBookingByPnr(pnr);
         if (booking == null) {
             System.out.println(ConsoleColors.colorize("No booking found with PNR: " + pnr, ConsoleColors.RED));
             return;
         }
-        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+        if (booking.getStatus() == BookingStatus.PENDING) {
             System.out.println(ConsoleColors.colorize("Booking " + pnr + " is not confirmed.", ConsoleColors.YELLOW));
             return;
         }
-        Ticket ticket = new Ticket(booking);
-        ticket.printTicket();
+        printTicket(booking);
+    }
+
+    private void executeMyBookings() {
+        List<Booking> bookings = getBookingsNewestFirst();
+        if (bookings.isEmpty()) {
+            System.out.println(ConsoleColors.colorize("No bookings yet", ConsoleColors.YELLOW));
+            return;
+        }
+
+        while (true) {
+            System.out.println("\n" + ConsoleColors.colorize("--- MY BOOKINGS ---", ConsoleColors.YELLOW, ConsoleColors.BOLD));
+            printBookingsTable(bookings);
+            System.out.println("  1. View a ticket");
+            System.out.println("  2. Search by passenger name");
+            System.out.println("  3. Back");
+            int choice = readIntSafe("Select option", 1, 3);
+            if (choice == 1) {
+                Booking booking = chooseBookingFromList(bookings, "Choose booking number to view");
+                if (booking != null) {
+                    printTicket(booking);
+                }
+            } else if (choice == 2) {
+                searchBookingsByPassengerName(bookings);
+            } else {
+                return;
+            }
+        }
+    }
+
+    private void searchBookingsByPassengerName(List<Booking> bookings) {
+        String query = promptNonEmpty("Passenger name to search");
+        String normalizedQuery = query.toLowerCase();
+        List<Booking> matches = new ArrayList<>();
+        for (Booking booking : bookings) {
+            for (Passenger passenger : booking.getPassengers()) {
+                if (passenger.getName().toLowerCase().contains(normalizedQuery)) {
+                    matches.add(booking);
+                    break;
+                }
+            }
+        }
+        if (matches.isEmpty()) {
+            System.out.println(ConsoleColors.colorize("No bookings found for passenger name matching '" + query + "'.", ConsoleColors.YELLOW));
+            return;
+        }
+        printBookingsTable(matches);
     }
 
     private void executeCancelTicket() {
+        List<Booking> bookings = getBookingsNewestFirst();
+        if (bookings.isEmpty()) {
+            System.out.println(ConsoleColors.colorize("No bookings yet", ConsoleColors.YELLOW));
+            return;
+        }
+
         System.out.println("\n" + ConsoleColors.colorize("--- CANCEL TICKET ---", ConsoleColors.YELLOW, ConsoleColors.BOLD));
-        System.out.print("Enter PNR number to cancel: ");
-        String pnr = readLineSafe();
-        Booking booking = bookingService.getBookingByPnr(pnr);
-        if (booking == null) {
-            System.out.println(ConsoleColors.colorize("No booking found with PNR: " + pnr, ConsoleColors.RED));
-            return;
-        }
-
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
-            System.out.println(ConsoleColors.colorize("Booking is already cancelled.", ConsoleColors.YELLOW));
-            return;
-        }
-
-        boolean confirm = promptConfirmation("Are you sure you want to cancel booking " + pnr + "?");
-        if (confirm) {
-            booking.setStatus(BookingStatus.CANCELLED);
-            for (Seat seat : booking.getSeats()) {
-                seat.cancel();
+        System.out.println("  1. Choose from My Bookings");
+        System.out.println("  2. Enter PNR");
+        System.out.println("  3. Back");
+        int choice = readIntSafe("Select option", 1, 3);
+        Booking booking;
+        if (choice == 1) {
+            printBookingsTable(bookings);
+            booking = chooseBookingFromList(bookings, "Choose booking number to cancel");
+        } else if (choice == 2) {
+            System.out.print("Enter PNR number to cancel: ");
+            String pnr = readLineSafe();
+            booking = bookingService.getBookingByPnr(pnr);
+            if (booking == null) {
+                System.out.println(ConsoleColors.colorize("No booking found with PNR: " + pnr, ConsoleColors.RED));
+                return;
             }
-            System.out.println(ConsoleColors.colorize("Ticket " + pnr + " successfully cancelled. Refund processed as per cancellation policy.", ConsoleColors.GREEN));
         } else {
-            System.out.println("Cancellation aborted.");
+            return;
         }
+        if (booking == null) {
+            return;
+        }
+        if (booking.getStatus() == BookingStatus.CANCELLED) {
+            System.out.println(ConsoleColors.colorize("Booking " + booking.getPnr() + " is already cancelled.", ConsoleColors.YELLOW));
+            return;
+        }
+        if (booking.getStatus() != BookingStatus.CONFIRMED) {
+            System.out.println(ConsoleColors.colorize("Only confirmed bookings can be cancelled.", ConsoleColors.YELLOW));
+            return;
+        }
+
+        printTicket(booking);
+        RefundPolicy refundPolicy = booking.getPayment() != null
+                && booking.getPayment().getStatus() == PaymentStatus.PAY_AT_ARRIVAL
+                ? new CashRefundPolicy()
+                : new TimeBasedRefundPolicy();
+        int refundPercentage = refundPolicy.getRefundPercentage(booking);
+        double refundAmount = Math.round(booking.getTotalFare() * refundPercentage / 100.0);
+        System.out.printf("Refund amount: %s%.0f (%d%% of total fare)%n",
+                Constants.CURRENCY, refundAmount, refundPercentage);
+
+        if (!promptConfirmation("Confirm cancellation of " + booking.getPnr() + "?")) {
+            System.out.println("Cancellation aborted.");
+            return;
+        }
+
+        try {
+            bookingService.cancelBooking(booking);
+        } catch (IllegalStateException e) {
+            System.out.println(ConsoleColors.colorize("Could not save cancellation: " + e.getMessage(), ConsoleColors.RED));
+            return;
+        }
+        List<String> cancellationMessage = new ArrayList<>();
+        cancellationMessage.add("TICKET CANCELLED");
+        cancellationMessage.add("Refund amount: " + Constants.CURRENCY + String.format("%.0f", refundAmount));
+        cancellationMessage.add("Refund percentage: " + refundPercentage + "%");
+        printPaymentBox(cancellationMessage, refundAmount > 0.0 ? ConsoleColors.YELLOW : ConsoleColors.RED);
+    }
+
+    private List<Booking> getBookingsNewestFirst() {
+        List<Booking> bookings = new ArrayList<>();
+        for (Booking booking : bookingService.getAllBookings().values()) {
+            if (booking.getStatus() != BookingStatus.PENDING) {
+                bookings.add(booking);
+            }
+        }
+        bookings.sort(Comparator.comparing(Booking::getBookingTime).reversed());
+        return bookings;
+    }
+
+    private Booking chooseBookingFromList(List<Booking> bookings, String prompt) {
+        if (bookings.isEmpty()) {
+            return null;
+        }
+        int choice = readIntSafe(prompt, 1, bookings.size());
+        return bookings.get(choice - 1);
+    }
+
+    private void printBookingsTable(List<Booking> bookings) {
+        System.out.printf("%-4s %-13s %-34s %-12s %-18s %-14s %-22s %-12s %10s%n",
+                "#", "PNR", "Route", "Travel Date", "Class", "Seats", "Passengers", "Status", "Total");
+        System.out.println(repeat('-', 145));
+        for (int i = 0; i < bookings.size(); i++) {
+            Booking booking = bookings.get(i);
+            Trip trip = booking.getTrip();
+            String route = trip.getRoute().getSource().getName() + " -> "
+                    + trip.getRoute().getDestination().getName();
+            String passengers = formatPassengerNames(booking);
+            System.out.printf("%-4d %-13s %-34s %-12s %-18s %-14s %-22s %-12s %s%.0f%n",
+                    i + 1,
+                    booking.getPnr(),
+                    truncate(route, 34),
+                    trip.getDate().format(Trip.DATE_FORMATTER),
+                    truncate(booking.getSeatClass().getDisplayName(), 18),
+                    truncate(String.join(", ", booking.getSeatNumbers()), 14),
+                    truncate(passengers, 22),
+                    booking.getStatus(),
+                    Constants.CURRENCY,
+                    booking.getTotalFare());
+        }
+    }
+
+    private String formatPassengerNames(Booking booking) {
+        List<String> names = new ArrayList<>();
+        for (Passenger passenger : booking.getPassengers()) {
+            names.add(passenger.getName() + " (" + passenger.getAge() + ")");
+        }
+        return String.join(", ", names);
+    }
+
+    private String truncate(String value, int width) {
+        if (value.length() <= width) {
+            return value;
+        }
+        return value.substring(0, width - 3) + "...";
+    }
+
+    private void printTicket(Booking booking) {
+        new Ticket(booking).printTicket();
     }
 
     // -------------------------------------------------------------------------

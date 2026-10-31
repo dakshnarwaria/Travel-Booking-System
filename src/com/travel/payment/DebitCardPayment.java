@@ -8,6 +8,8 @@ import com.travel.exception.PaymentFailedException;
  */
 public class DebitCardPayment extends CardPayment {
 
+    private static final long serialVersionUID = 1L;
+
     public static final double PROCESSING_FEE_RATE = 0.01;
 
     public DebitCardPayment() {

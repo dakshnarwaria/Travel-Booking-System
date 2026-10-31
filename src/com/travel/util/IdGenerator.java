@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class IdGenerator {
 
-    private static final String PNR_PREFIX = "TRV";
+    public static final String PNR_PREFIX = "TRV";
     private static final int INITIAL_PNR_SEQUENCE = 10001;
     private static final AtomicInteger PNR_COUNTER = new AtomicInteger(INITIAL_PNR_SEQUENCE);
 

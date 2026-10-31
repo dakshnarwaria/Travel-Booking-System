@@ -53,7 +53,7 @@ public class Ticket implements Serializable {
 
         System.out.println("================================================================================");
         System.out.println(ConsoleColors.colorize(
-                "                     ELECTRONIC TRAVEL TICKET - CONFIRMED",
+                "                     ELECTRONIC TRAVEL TICKET - " + booking.getStatus().toString().toUpperCase(),
                 ConsoleColors.GREEN,
                 ConsoleColors.BOLD
         ));

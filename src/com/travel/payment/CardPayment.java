@@ -7,6 +7,8 @@ import com.travel.enums.PaymentMode;
  */
 public abstract class CardPayment extends Payment {
 
+    private static final long serialVersionUID = 1L;
+
     protected CardPayment(PaymentMode paymentMode) {
         super(paymentMode);
     }

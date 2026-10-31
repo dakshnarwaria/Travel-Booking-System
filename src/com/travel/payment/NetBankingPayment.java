@@ -8,6 +8,8 @@ import com.travel.exception.PaymentFailedException;
  */
 public class NetBankingPayment extends Payment {
 
+    private static final long serialVersionUID = 1L;
+
     public static final double PROCESSING_FEE = 12.0;
 
     public NetBankingPayment() {

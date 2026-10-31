@@ -25,6 +25,7 @@ import com.travel.ui.ConsoleMenu;
 import com.travel.ui.SeatMapRenderer;
 import com.travel.util.ConsoleColors;
 import com.travel.util.Constants;
+import com.travel.util.Clock;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
@@ -74,8 +75,25 @@ public class Main {
         }
 
         for (int i = 0; i < args.length; i++) {
+            if ("--now".equalsIgnoreCase(args[i])) {
+                if (i + 1 >= args.length) {
+                    System.out.println("Usage: --now \"dd-MM-yyyy HH:mm\"");
+                    return;
+                }
+                try {
+                    Clock.setFixedTime(args[++i]);
+                } catch (IllegalArgumentException e) {
+                    System.out.println(e.getMessage());
+                    return;
+                }
+            }
+        }
+
+        for (int i = 0; i < args.length; i++) {
             String arg = args[i].trim();
-            if ("--ascii".equalsIgnoreCase(arg)) {
+            if ("--now".equalsIgnoreCase(arg)) {
+                i++;
+            } else if ("--ascii".equalsIgnoreCase(arg)) {
                 ConsoleColors.setAsciiMode(true);
             } else if ("--nocolor".equalsIgnoreCase(arg)) {
                 ConsoleColors.setNoColor(true);
@@ -128,6 +146,7 @@ public class Main {
         System.out.println("  --cities                                : Lists all 50 cities grouped by tier");
         System.out.println("  --fares <src> <dst> <dd-MM-yyyy>        : Prints comprehensive fare table for route");
         System.out.println("  --trips <src> <dst> <mode> <dd-MM-yyyy> : Displays scheduled trips for date");
+        System.out.println("  --now \"dd-MM-yyyy HH:mm\"                : Overrides the current time for testing");
         System.out.println("  --demo [\"Class Name\"]                   : Non-interactive seat map preview");
         System.out.println("  --ascii                                 : Enables ASCII fallback borders");
         System.out.println("  --nocolor                               : Disables ANSI color codes");

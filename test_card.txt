@@ -6,7 +6,7 @@ Mumbai
 1
 1
 1A
-Test Passenger
+Test Card Passenger
 30
 M
 y
@@ -15,4 +15,4 @@ y
 Test Person
 12/30
 123
-4
+5
