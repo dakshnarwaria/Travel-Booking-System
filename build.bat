@@ -10,7 +10,7 @@ if not exist out mkdir out
 REM Enable UTF-8 code page for Unicode box characters
 chcp 65001 > nul
 
-javac -encoding UTF-8 -d out -sourcepath src src\com\travel\Main.java src\com\travel\enums\*.java src\com\travel\interfaces\*.java src\com\travel\exception\*.java src\com\travel\util\*.java src\com\travel\seat\*.java src\com\travel\layout\*.java src\com\travel\ui\*.java
+javac -encoding UTF-8 -d out -sourcepath src src\com\travel\Main.java src\com\travel\enums\*.java src\com\travel\interfaces\*.java src\com\travel\exception\*.java src\com\travel\util\*.java src\com\travel\seat\*.java src\com\travel\layout\*.java src\com\travel\ui\*.java src\com\travel\model\*.java src\com\travel\repository\*.java src\com\travel\transport\*.java src\com\travel\service\*.java
 
 if %ERRORLEVEL% NEQ 0 (
     echo Compilation failed!

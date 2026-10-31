@@ -1,0 +1,51 @@
+id,name,state,tier,latitude,longitude,hasAirport,hasStation,touristPlaces
+1,Delhi,Delhi,Tier 1,28.6139,77.2090,true,true,India Gate|Red Fort|Qutub Minar|Humayun's Tomb|Lotus Temple
+2,Mumbai,Maharashtra,Tier 1,19.0760,72.8777,true,true,Gateway of India|Marine Drive|Elephanta Caves|CST Station
+3,Kolkata,West Bengal,Tier 1,22.5726,88.3639,true,true,Victoria Memorial|Howrah Bridge|Dakshineswar Temple|Indian Museum
+4,Chennai,Tamil Nadu,Tier 1,13.0827,80.2707,true,true,Marina Beach|Kapaleeshwarar Temple|Fort St. George
+5,Bengaluru,Karnataka,Tier 1,12.9716,77.5946,true,true,Lalbagh|Bangalore Palace|Cubbon Park|Nandi Hills
+6,Hyderabad,Telangana,Tier 1,17.3850,78.4867,true,true,Charminar|Golconda Fort|Ramoji Film City|Hussain Sagar
+7,Ahmedabad,Gujarat,Tier 1,23.0225,72.5714,true,true,Sabarmati Ashram|Adalaj Stepwell|Sidi Saiyyed Mosque
+8,Pune,Maharashtra,Tier 1,18.5204,73.8567,true,true,Shaniwar Wada|Aga Khan Palace|Sinhagad Fort
+9,Jaipur,Rajasthan,Tier 2,26.9124,75.7873,true,true,Amber Fort|Hawa Mahal|City Palace|Jantar Mantar
+10,Lucknow,Uttar Pradesh,Tier 2,26.8467,80.9462,true,true,Bara Imambara|Rumi Darwaza|The Residency
+11,Kanpur,Uttar Pradesh,Tier 2,26.4499,80.3319,true,true,JK Temple|Kanpur Zoo|Bithoor
+12,Nagpur,Maharashtra,Tier 2,21.1458,79.0882,true,true,Deekshabhoomi|Ramtek Fort|Zero Mile Stone
+13,Indore,Madhya Pradesh,Tier 2,22.7196,75.8577,true,true,Rajwada|Lal Bagh Palace|Sarafa Bazaar
+14,Bhopal,Madhya Pradesh,Tier 2,23.2599,77.4126,true,true,Upper Lake|Taj-ul-Masajid|Sanchi Stupa (nearby)
+15,Patna,Bihar,Tier 2,25.5941,85.1376,true,true,Golghar|Takht Sri Patna Sahib|Bihar Museum
+16,Surat,Gujarat,Tier 2,21.1702,72.8311,true,true,Dumas Beach|Surat Castle|Dutch Garden
+17,Vadodara,Gujarat,Tier 2,22.3072,73.1812,true,true,Laxmi Vilas Palace|Sayaji Baug|Statue of Unity (nearby)
+18,Coimbatore,Tamil Nadu,Tier 2,11.0168,76.9558,true,true,Marudhamalai Temple|Adiyogi at Isha Yoga Center|Siruvani Waterfalls
+19,Kochi,Kerala,Tier 2,9.9312,76.2673,true,true,Fort Kochi|Mattancherry Palace|Marine Drive
+20,Visakhapatnam,Andhra Pradesh,Tier 2,17.6868,83.2185,true,true,RK Beach|Kailasagiri|Araku Valley (nearby)
+21,Chandigarh,Chandigarh,Tier 2,30.7333,76.7794,true,true,Rock Garden|Sukhna Lake|Capitol Complex
+22,Guwahati,Assam,Tier 2,26.1445,91.7362,true,true,Kamakhya Temple|Umananda Island|Brahmaputra Riverfront
+23,Bhubaneswar,Odisha,Tier 2,20.2961,85.8245,true,true,Lingaraj Temple|Udayagiri and Khandagiri Caves|Dhauli Shanti Stupa
+24,Thiruvananthapuram,Kerala,Tier 2,8.5241,76.9366,true,true,Padmanabhaswamy Temple|Kovalam Beach|Napier Museum
+25,Mysuru,Karnataka,Tier 2,12.2958,76.6394,true,true,Mysore Palace|Chamundi Hills|Brindavan Gardens
+26,Madurai,Tamil Nadu,Tier 2,9.9252,78.1198,true,true,Meenakshi Amman Temple|Thirumalai Nayakkar Mahal
+27,Nashik,Maharashtra,Tier 2,19.9975,73.7898,true,true,Trimbakeshwar Temple|Pandavleni Caves|Sula Vineyards
+28,Varanasi,Uttar Pradesh,Tier 2,25.3176,82.9739,true,true,Kashi Vishwanath|Dashashwamedh Ghat|Sarnath
+29,Agra,Uttar Pradesh,Tier 2,27.1767,78.0081,true,true,Taj Mahal|Agra Fort|Fatehpur Sikri
+30,Amritsar,Punjab,Tier 2,31.6340,74.8723,true,true,Golden Temple|Jallianwala Bagh|Wagah Border
+31,Ranchi,Jharkhand,Tier 2,23.3441,85.3096,true,true,Hundru Falls|Jagannath Temple|Rock Garden
+32,Raipur,Chhattisgarh,Tier 2,21.2514,81.6296,true,true,Nandan Van Zoo|Mahant Ghasidas Museum|Purkhouti Muktangan
+33,Dehradun,Uttarakhand,Tier 2,30.3165,78.0322,true,true,Robber's Cave|Sahastradhara|Mindrolling Monastery
+34,Jodhpur,Rajasthan,Tier 2,26.2389,73.0243,true,true,Mehrangarh Fort|Umaid Bhawan Palace|Jaswant Thada
+35,Udaipur,Rajasthan,Tier 2,24.5854,73.7125,true,true,City Palace|Lake Pichola|Fateh Sagar Lake|Saheliyon ki Bari
+36,Goa (Panaji),Goa,Tourist,15.4909,73.8278,true,true,Baga Beach|Basilica of Bom Jesus|Fort Aguada
+37,Shimla,Himachal Pradesh,Tourist,31.1048,77.1734,true,true,The Ridge|Mall Road|Kufri
+38,Manali,Himachal Pradesh,Tourist,32.2396,77.1887,false,false,Rohtang Pass|Solang Valley|Hadimba Temple
+39,Rishikesh,Uttarakhand,Tourist,30.0869,78.2676,false,true,Laxman Jhula|Triveni Ghat|river rafting
+40,Haridwar,Uttarakhand,Tourist,29.9457,78.1642,false,true,Har Ki Pauri|Mansa Devi Temple
+41,Darjeeling,West Bengal,Tourist,27.0410,88.2663,false,true,Tiger Hill|Batasia Loop|Himalayan Toy Train
+42,Gangtok,Sikkim,Tourist,27.3389,88.6065,true,false,Tsomgo Lake|Rumtek Monastery|MG Marg
+43,Ooty,Tamil Nadu,Tourist,11.4102,76.6950,false,true,Botanical Garden|Ooty Lake|Doddabetta Peak
+44,Munnar,Kerala,Tourist,10.0889,77.0595,false,false,Tea gardens|Eravikulam National Park|Mattupetty Dam
+45,Pondicherry,Puducherry,Tourist,11.9416,79.8083,true,true,Promenade Beach|Auroville|French Quarter
+46,Jaisalmer,Rajasthan,Tourist,26.9157,70.9083,true,true,Jaisalmer Fort|Sam Sand Dunes|Patwon ki Haveli
+47,Leh,Ladakh,Tourist,34.1526,77.5771,true,false,Pangong Lake|Shanti Stupa|Leh Palace
+48,Srinagar,Jammu and Kashmir,Tourist,34.0837,74.7973,true,true,Dal Lake|Mughal Gardens|Shankaracharya Temple
+49,Puri,Odisha,Tourist,19.8135,85.8312,false,true,Jagannath Temple|Puri Beach|Konark Sun Temple (nearby)
+50,Mount Abu,Rajasthan,Tourist,24.5926,72.7156,false,true,Dilwara Temples|Nakki Lake|Sunset Point
