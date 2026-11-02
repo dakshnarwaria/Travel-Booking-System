@@ -23,6 +23,8 @@ import com.travel.service.TripGenerator;
 import com.travel.transport.Train;
 import com.travel.ui.ConsoleMenu;
 import com.travel.ui.SeatMapRenderer;
+import com.travel.ui.BigText;
+import com.travel.ui.ScreenStyle;
 import com.travel.util.ConsoleColors;
 import com.travel.util.Constants;
 import com.travel.util.Clock;
@@ -86,6 +88,10 @@ public class Main {
                     System.out.println(e.getMessage());
                     return;
                 }
+            } else if ("--ascii".equalsIgnoreCase(args[i])) {
+                ConsoleColors.setAsciiMode(true);
+            } else if ("--nocolor".equalsIgnoreCase(args[i])) {
+                ConsoleColors.setNoColor(true);
             }
         }
 
@@ -143,23 +149,26 @@ public class Main {
     }
 
     private static void printUsageHelp() {
-        System.out.println("================================================================================");
-        System.out.println(ConsoleColors.colorize("             TRAVEL TICKET BOOKING SYSTEM - COMMAND LINE HELP", ConsoleColors.CYAN, ConsoleColors.BOLD));
-        System.out.println("================================================================================");
-        System.out.println("Usage:");
-        System.out.println("  --menu                                  : Starts interactive console booking menu");
-        System.out.println("  --cities                                : Lists all 50 cities grouped by tier");
-        System.out.println("  --fares <src> <dst> <dd-MM-yyyy>        : Prints comprehensive fare table for route");
-        System.out.println("  --trips <src> <dst> <mode> <dd-MM-yyyy> : Displays scheduled trips for date");
-        System.out.println("  --now \"dd-MM-yyyy HH:mm\"                : Overrides the current time for testing");
-        System.out.println("  --test                                  : Runs the non-interactive test suite");
-        System.out.println("  --demo [\"Class Name\"]                   : Non-interactive seat map preview");
-        System.out.println("  --ascii                                 : Enables ASCII fallback borders");
-        System.out.println("  --nocolor                               : Disables ANSI color codes");
-        System.out.println("================================================================================");
+        List<String> lines = new ArrayList<>();
+        lines.add(ConsoleColors.colorize(
+                ScreenStyle.center("TRAVEL TICKET BOOKING SYSTEM - HELP", 74),
+                ConsoleColors.CYAN, ConsoleColors.BOLD));
+        lines.add(ScreenStyle.ruleContent());
+        lines.add("Usage:");
+        lines.add("  --menu                 : Starts the interactive booking menu");
+        lines.add("  --cities               : Lists all destinations grouped by tier");
+        lines.add("  --fares <src> <dst> <date> : Prints the fare table");
+        lines.add("  --trips <src> <dst> <mode> <date> : Displays scheduled trips");
+        lines.add("  --now <date and time>  : Overrides the current time");
+        lines.add("  --test                 : Runs the non-interactive test suite");
+        lines.add("  --demo [class]         : Shows a non-interactive seat map");
+        lines.add("  --ascii                : Enables ASCII borders and banner");
+        lines.add("  --nocolor              : Disables ANSI color codes");
+        printFrame(lines);
     }
 
     private static void launchInteractiveMenu() {
+        BigText.printBanner();
         CityRepository cityRepo = CityRepository.getInstance();
         SearchService searchService = new SearchService();
         BookingService bookingService = new BookingService();
@@ -185,20 +194,21 @@ public class Main {
             return;
         }
 
-        System.out.println("=========================================================================================");
-        System.out.println(ConsoleColors.colorize(
-                String.format("FARE COMPARISON SCHEDULE: %s -> %s (DATE: %s)", source.getName().toUpperCase(), destination.getName().toUpperCase(), dateStr),
-                ConsoleColors.CYAN, ConsoleColors.BOLD
-        ));
-        System.out.println("=========================================================================================");
-        System.out.printf("%-8s | %-16s | %-10s | %-12s | %-8s | %-12s | %-10s\n",
-                "Mode", "Class", "Base Fare", "Res/Airport", "GST", "Convenience", "Total Fare");
-        System.out.println("-----------------------------------------------------------------------------------------");
+        List<String> lines = new ArrayList<>();
+        lines.add(ConsoleColors.colorize(
+                "FARE COMPARISON: " + source.getName().toUpperCase() + " -> "
+                        + destination.getName().toUpperCase() + " (" + dateStr + ")",
+                ConsoleColors.CYAN, ConsoleColors.BOLD));
+        lines.add(ScreenStyle.ruleContent());
+        lines.add(String.format(
+                "%-6s | %-12s | %-7s | %-7s | %-6s | %-7s | %-7s",
+                "Mode", "Class", "Base", "Res/Air", "GST", "Fee", "Total"));
 
         for (TransportType mode : TransportType.values()) {
             Route route = new Route(source, destination, mode);
             if (!route.isOperable()) {
-                System.out.printf("%-8s | UNAVAILABLE: %s\n", mode.getDisplayName(), route.getInoperableReason());
+                lines.add(mode.getDisplayName() + " unavailable: "
+                        + route.getInoperableReason());
                 continue;
             }
 
@@ -216,13 +226,23 @@ public class Main {
                 PricingService.FareBreakdown fb = PricingService.calculateFare(sc, dist, null);
                 double resOrAir = fb.getReservationFee() + fb.getAirportFee();
 
-                System.out.printf("%-8s | %-16s | " + Constants.CURRENCY + "%-9.0f | " + Constants.CURRENCY + "%-11.0f | " + Constants.CURRENCY + "%-7.0f | " + Constants.CURRENCY + "%-11.0f | " +
-                                ConsoleColors.colorize(Constants.CURRENCY + "%-9.0f", (sc.isPremium() ? ConsoleColors.COLOR_PREMIUM : ConsoleColors.COLOR_STANDARD), ConsoleColors.BOLD) + "\n",
+                String row = String.format(
+                        "%-6.6s | %-12.12s | %-7s | %-7s | %-6s | %-7s | ",
                         mode.getDisplayName(), sc.getDisplayName(),
-                        fb.getBaseFare(), resOrAir, fb.getGstAmount(), fb.getConvenienceFee(), fb.getTotalFare());
+                        Constants.CURRENCY + String.format("%.0f", fb.getBaseFare()),
+                        Constants.CURRENCY + String.format("%.0f", resOrAir),
+                        Constants.CURRENCY + String.format("%.0f", fb.getGstAmount()),
+                        Constants.CURRENCY + String.format("%.0f", fb.getConvenienceFee()));
+                row += ConsoleColors.colorize(
+                        String.format("%-7s",
+                                Constants.CURRENCY + String.format("%.0f", fb.getTotalFare())),
+                        sc.isPremium() ? ConsoleColors.COLOR_PREMIUM
+                                : ConsoleColors.COLOR_STANDARD,
+                        ConsoleColors.BOLD);
+                lines.add(row);
             }
         }
-        System.out.println("=========================================================================================\n");
+        printFrame(lines);
     }
 
     // -------------------------------------------------------------------------
@@ -233,26 +253,31 @@ public class Main {
         CityRepository repo = CityRepository.getInstance();
         List<City> all = repo.getAllCities();
 
-        System.out.println("================================================================================");
-        System.out.println(ConsoleColors.colorize("                   ALL 50 DESTINATIONS GROUPED BY TIER", ConsoleColors.CYAN, ConsoleColors.BOLD));
-        System.out.println("================================================================================");
-        System.out.printf("Total Cities Loaded: %d (8 Tier 1, 27 Tier 2, 15 Tourist Destinations)\n\n", all.size());
+        List<String> lines = new ArrayList<>();
+        lines.add(ConsoleColors.colorize(
+                ScreenStyle.center("ALL DESTINATIONS GROUPED BY TIER", 74),
+                ConsoleColors.CYAN, ConsoleColors.BOLD));
+        lines.add(String.format("Total Cities Loaded: %d", all.size()));
 
         String[] tiers = {"Tier 1", "Tier 2", "Tourist"};
         for (String tier : tiers) {
             List<City> tierCities = repo.getCitiesByTier(tier);
-            System.out.println(ConsoleColors.colorize("--- " + tier.toUpperCase() + " (" + tierCities.size() + " CITIES) -------------------------------------------------", ConsoleColors.YELLOW, ConsoleColors.BOLD));
+            lines.add(ScreenStyle.ruleContent());
+            lines.add(ConsoleColors.colorize(
+                    tier.toUpperCase() + " (" + tierCities.size() + " CITIES)",
+                    ConsoleColors.YELLOW, ConsoleColors.BOLD));
 
             for (City c : tierCities) {
                 String connectivity = String.format("Airport: %-3s | Station: %-3s",
                         (c.hasAirport() ? "Yes" : "No"), (c.hasStation() ? "Yes" : "No"));
                 String places = String.join(", ", c.getTouristPlaces());
 
-                System.out.printf("  [%02d] %-18s (%-16s) | %s\n", c.getId(), c.getName(), c.getState(), connectivity);
-                System.out.printf("       Tourist Places: %s\n", places);
+                lines.add(String.format("  [%02d] %-18s (%-16s) | %s",
+                        c.getId(), c.getName(), c.getState(), connectivity));
+                lines.add("  Tourist Places: " + places);
             }
-            System.out.println();
         }
+        printFrame(lines);
     }
 
     // -------------------------------------------------------------------------
@@ -292,35 +317,35 @@ public class Main {
         Route route = new Route(source, destination, mode);
 
         if (!route.isOperable()) {
-            System.out.println("================================================================================");
-            System.out.println(ConsoleColors.colorize("TRANSPORT MODE UNAVAILABLE", ConsoleColors.RED, ConsoleColors.BOLD));
-            System.out.println("================================================================================");
-            System.out.printf("Route  : %s -> %s\n", source.getName(), destination.getName());
-            System.out.printf("Mode   : %s\n", mode.getDisplayName());
-            System.out.printf("Reason : %s\n", route.getInoperableReason());
-            System.out.println("================================================================================");
+            printFrame(ConsoleColors.colorize("TRANSPORT MODE UNAVAILABLE",
+                    ConsoleColors.RED, ConsoleColors.BOLD),
+                    "Route  : " + source.getName() + " -> " + destination.getName(),
+                    "Mode   : " + mode.getDisplayName(),
+                    "Reason : " + route.getInoperableReason());
             return;
         }
 
         List<Trip> trips = TripGenerator.generateTrips(route, date);
-
-        System.out.println("================================================================================");
-        System.out.println(ConsoleColors.colorize(
-                String.format("TRIPS FOUND: %s -> %s (%s)", source.getName().toUpperCase(), destination.getName().toUpperCase(), mode.getDisplayName().toUpperCase()),
-                ConsoleColors.CYAN, ConsoleColors.BOLD
-        ));
-        System.out.printf("Date: %s | Distance: %.1f km | Direct: %.1f km | Trips Available: %d\n",
-                date.format(DATE_FORMATTER), route.getDistanceKm(), route.getDirectDistanceKm(), trips.size());
-        System.out.println("================================================================================\n");
+        printFrame(
+                ConsoleColors.colorize(
+                        "TRIPS FOUND: " + source.getName().toUpperCase() + " -> "
+                                + destination.getName().toUpperCase() + " ("
+                                + mode.getDisplayName().toUpperCase() + ")",
+                        ConsoleColors.CYAN, ConsoleColors.BOLD),
+                String.format("Date: %s | Distance: %.1f km | Direct: %.1f km",
+                        date.format(DATE_FORMATTER), route.getDistanceKm(),
+                        route.getDirectDistanceKm()),
+                "Trips Available: " + trips.size());
 
         for (int i = 0; i < trips.size(); i++) {
             Trip trip = trips.get(i);
-            System.out.printf("Trip #%d: %s [%s]\n", (i + 1), trip.getTransport().getOperatorName(), trip.getTripId());
-            System.out.printf("  Departure : %s | Arrival: %s | Duration: %s | Distance: %.1f km\n",
-                    trip.getDepartureTime().format(Trip.TIME_FORMATTER), trip.getFormattedArrival(),
-                    trip.getFormattedDuration(), route.getDistanceKm());
+            List<String> tripLines = new ArrayList<>();
+            tripLines.add(String.format("Trip #%d: %s [%s]", i + 1,
+                    trip.getTransport().getOperatorName(), trip.getTripId()));
+            tripLines.add(String.format("Departure: %s | Arrival: %s | Duration: %s",
+                    trip.getDepartureTime().format(Trip.TIME_FORMATTER),
+                    trip.getFormattedArrival(), trip.getFormattedDuration()));
 
-            System.out.print("  Seats Left: ");
             StringBuilder sb = new StringBuilder();
             for (Map.Entry<SeatClass, SeatLayout> entry : trip.getTransport().getSeatLayouts().entrySet()) {
                 SeatClass sc = entry.getKey();
@@ -329,8 +354,20 @@ public class Main {
                 sb.append(sc.getDisplayName()).append(": ")
                   .append(layout.getAvailableSeatsCount()).append("/").append(layout.getTotalSeats());
             }
-            System.out.println(sb.toString());
-            System.out.println("--------------------------------------------------------------------------------");
+            tripLines.add("Seats Left: " + sb);
+            printFrame(tripLines);
+        }
+    }
+
+    private static void printFrame(String... lines) {
+        for (String line : ScreenStyle.frame(lines)) {
+            System.out.println(line);
+        }
+    }
+
+    private static void printFrame(List<String> lines) {
+        for (String line : ScreenStyle.frame(lines)) {
+            System.out.println(line);
         }
     }
 

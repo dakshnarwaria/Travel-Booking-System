@@ -21,6 +21,9 @@ import com.travel.transport.Bus;
 import com.travel.enums.TransportType;
 import com.travel.layout.ChairLayout;
 import com.travel.util.Clock;
+import com.travel.util.ConsoleColors;
+import com.travel.ui.BigText;
+import com.travel.ui.ScreenStyle;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -109,6 +112,36 @@ public final class TestRunner {
         checkRefund("Refund tier: over 24 hours is 90%", "05-11-2026 09:00", 90);
         checkRefund("Refund tier: 6 to 24 hours is 50%", "05-11-2026 23:00", 50);
         checkRefund("Refund tier: under 6 hours is 0%", "06-11-2026 05:00", 0);
+
+        runTest("UI frames align to visible width", () -> {
+            boolean previousAscii = ConsoleColors.isAsciiMode();
+            boolean previousNoColor = ConsoleColors.isNoColor();
+            try {
+                for (boolean ascii : new boolean[]{false, true}) {
+                    for (boolean noColor : new boolean[]{false, true}) {
+                        ConsoleColors.setAsciiMode(ascii);
+                        ConsoleColors.setNoColor(noColor);
+                        List<String> frame = ScreenStyle.frame(
+                                "plain line",
+                                ConsoleColors.colorize("colored line",
+                                        ConsoleColors.CYAN));
+                        for (String line : frame) {
+                            assertEquals(ScreenStyle.FRAME_WIDTH,
+                                    ScreenStyle.visibleLength(line));
+                        }
+                        for (String line : BigText.bannerLines()) {
+                            if (ScreenStyle.visibleLength(line) > 78) {
+                                throw new AssertionError(
+                                        "Banner line exceeds 78 visible columns.");
+                            }
+                        }
+                    }
+                }
+            } finally {
+                ConsoleColors.setAsciiMode(previousAscii);
+                ConsoleColors.setNoColor(previousNoColor);
+            }
+        });
 
         runTest("PNR lookup accepts TRV-10001", () -> {
             assertEquals("TRV-10001", findTemporaryBooking("TRV-10001").getPnr());

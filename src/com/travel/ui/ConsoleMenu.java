@@ -30,6 +30,7 @@ import com.travel.service.PricingService;
 import com.travel.service.SearchService;
 import com.travel.util.ConsoleColors;
 import com.travel.util.Constants;
+import com.travel.util.Clock;
 import com.travel.util.InputHelper;
 
 import java.time.LocalDate;
@@ -104,15 +105,17 @@ public class ConsoleMenu {
     }
 
     private void printMainMenu() {
-        System.out.println("\n================================================================================");
-        System.out.println(ConsoleColors.colorize("             TRAVEL TICKET BOOKING SYSTEM - MAIN MENU", ConsoleColors.CYAN, ConsoleColors.BOLD));
-        System.out.println("================================================================================");
-        System.out.println("  1. Book Travel Ticket");
-        System.out.println("  2. View Ticket by PNR");
-        System.out.println("  3. My Bookings");
-        System.out.println("  4. Cancel Ticket");
-        System.out.println("  5. Exit System");
-        System.out.println("--------------------------------------------------------------------------------");
+        System.out.println();
+        printFrame(
+                ConsoleColors.colorize(
+                        ScreenStyle.center("TRAVEL TICKET BOOKING - MAIN MENU", 74),
+                        ConsoleColors.CYAN, ConsoleColors.BOLD),
+                ScreenStyle.ruleContent(),
+                "  1. Book Travel Ticket",
+                "  2. View Ticket by PNR",
+                "  3. My Bookings",
+                "  4. Cancel Ticket",
+                "  5. Exit System");
     }
 
     // -------------------------------------------------------------------------
@@ -356,26 +359,36 @@ public class ConsoleMenu {
     }
 
     private double printFareSummary(SeatClass sc, double distanceKm, List<Seat> seats) {
-        System.out.println("--------------------------------------------------------------------------------");
-        System.out.printf("  Itemized Charges for %d x %s Seat(s):\n", seats.size(), sc.getDisplayName());
+        List<String> lines = new ArrayList<>();
+        lines.add(String.format("Itemized charges for %d x %s seat(s):",
+                seats.size(), sc.getDisplayName()));
+        lines.add(ScreenStyle.ruleContent());
         double totalSum = 0.0;
 
         for (int i = 0; i < seats.size(); i++) {
             Seat s = seats.get(i);
             PricingService.FareBreakdown fb = PricingService.calculateFare(sc, distanceKm, s);
-            System.out.printf("   * Seat %-4s: Base " + Constants.CURRENCY + "%.0f + Res/Airport " + Constants.CURRENCY + "%.0f + GST " + Constants.CURRENCY + "%.0f + Conv " + Constants.CURRENCY + "%.0f",
-                    s.getSeatNumber(), fb.getBaseFare(), (fb.getReservationFee() + fb.getAirportFee()),
-                    fb.getGstAmount(), fb.getConvenienceFee());
+            lines.add(String.format(
+                    "Seat %s: Base %s%.0f | Res/Air %s%.0f | GST %s%.0f",
+                    s.getSeatNumber(), Constants.CURRENCY, fb.getBaseFare(),
+                    Constants.CURRENCY, fb.getReservationFee() + fb.getAirportFee(),
+                    Constants.CURRENCY, fb.getGstAmount()));
+            String charges = String.format("Convenience %s%.0f",
+                    Constants.CURRENCY, fb.getConvenienceFee());
             if (fb.getSeatAddOn() > 0) {
-                System.out.printf(" + Addon " + Constants.CURRENCY + "%.0f", fb.getSeatAddOn());
+                charges += String.format(" | Add-on %s%.0f",
+                        Constants.CURRENCY, fb.getSeatAddOn());
             }
-            System.out.printf(" => " + Constants.CURRENCY + "%.0f\n", fb.getTotalFare());
+            lines.add(charges + String.format(" | Total %s%.0f",
+                    Constants.CURRENCY, fb.getTotalFare()));
             totalSum += fb.getTotalFare();
         }
 
-        System.out.println("--------------------------------------------------------------------------------");
-        System.out.printf("  FINAL AMOUNT DUE: " + ConsoleColors.colorize(Constants.CURRENCY + "%.0f", ConsoleColors.GREEN, ConsoleColors.BOLD) + "\n", totalSum);
-        System.out.println("--------------------------------------------------------------------------------");
+        lines.add(ScreenStyle.ruleContent());
+        lines.add(ConsoleColors.colorize(
+                String.format("FINAL AMOUNT DUE: %s%.0f", Constants.CURRENCY, totalSum),
+                ConsoleColors.GREEN, ConsoleColors.BOLD));
+        printFrame(lines);
         return totalSum;
     }
 
@@ -407,11 +420,13 @@ public class ConsoleMenu {
     }
 
     private void printPaymentSummary(double fare, double paymentFee, double finalTotal) {
-        System.out.println("--------------------------------------------------------------------------------");
-        System.out.printf("  Booking fare       : %s%.0f%n", Constants.CURRENCY, fare);
-        System.out.printf("  Payment-mode fee   : %s%.0f%n", Constants.CURRENCY, paymentFee);
-        System.out.printf("  FINAL TOTAL        : %s%.0f%n", Constants.CURRENCY, finalTotal);
-        System.out.println("--------------------------------------------------------------------------------");
+        printFrame(
+                "Booking fare      : " + Constants.CURRENCY + String.format("%.0f", fare),
+                "Payment-mode fee  : " + Constants.CURRENCY
+                        + String.format("%.0f", paymentFee),
+                ConsoleColors.colorize("FINAL TOTAL       : " + Constants.CURRENCY
+                        + String.format("%.0f", finalTotal),
+                        ConsoleColors.GREEN, ConsoleColors.BOLD));
     }
 
     private void printPaymentSuccess(Payment payment, double finalTotal) {
@@ -442,17 +457,9 @@ public class ConsoleMenu {
     }
 
     private void printPaymentBox(List<String> lines, String color) {
-        int width = 78;
-        for (String line : lines) {
-            width = Math.max(width, line.length() + 4);
+        for (String line : ScreenStyle.frame(lines)) {
+            System.out.println(ConsoleColors.colorize(line, color));
         }
-        String border = "+" + repeat('-', width - 2) + "+";
-        System.out.println(ConsoleColors.colorize(border, color));
-        for (String line : lines) {
-            System.out.println(ConsoleColors.colorize(
-                    String.format("| %-"+(width - 4)+"s |", line), color));
-        }
-        System.out.println(ConsoleColors.colorize(border, color));
     }
 
     private boolean promptPaymentRecovery() {
@@ -469,14 +476,6 @@ public class ConsoleMenu {
             System.out.println(ConsoleColors.colorize("Enter 1 to retry or 2 to return to the main menu.", ConsoleColors.RED));
             checkPromptAttempts(++attempts);
         }
-    }
-
-    private String repeat(char character, int count) {
-        StringBuilder repeated = new StringBuilder(count);
-        for (int i = 0; i < count; i++) {
-            repeated.append(character);
-        }
-        return repeated.toString();
     }
 
     private void releaseSelectedSeats(List<Seat> seats) {
@@ -638,26 +637,43 @@ public class ConsoleMenu {
     }
 
     private void printBookingsTable(List<Booking> bookings) {
-        System.out.printf("%-4s %-13s %-34s %-12s %-18s %-14s %-22s %-12s %10s%n",
-                "#", "PNR", "Route", "Travel Date", "Class", "Seats", "Passengers", "Status", "Total");
-        System.out.println(repeat('-', 145));
+        List<String> lines = new ArrayList<>();
+        lines.add("MY BOOKINGS");
+        lines.add(ScreenStyle.ruleContent());
+        lines.add(String.format(
+                "%-1s %-10s %-15s %-10s %-10s %-6s %-8s %7s",
+                "#", "PNR", "Route", "Date", "Class", "Seats", "Status",
+                "Total " + Constants.CURRENCY));
         for (int i = 0; i < bookings.size(); i++) {
             Booking booking = bookings.get(i);
             Trip trip = booking.getTrip();
             String route = trip.getRoute().getSource().getName() + " -> "
                     + trip.getRoute().getDestination().getName();
             String passengers = formatPassengerNames(booking);
-            System.out.printf("%-4d %-13s %-34s %-12s %-18s %-14s %-22s %-12s %s%.0f%n",
+            lines.add(String.format(
+                    "%1d %-10.10s %-15.15s %-10s %-10.10s %-6.6s %-8.8s %7.0f",
                     i + 1,
                     booking.getPnr(),
-                    truncate(route, 34),
+                    truncate(route, 15),
                     trip.getDate().format(Trip.DATE_FORMATTER),
-                    truncate(booking.getSeatClass().getDisplayName(), 18),
-                    truncate(String.join(", ", booking.getSeatNumbers()), 14),
-                    truncate(passengers, 22),
+                    truncate(booking.getSeatClass().getDisplayName(), 10),
+                    truncate(String.join(", ", booking.getSeatNumbers()), 6),
                     booking.getStatus(),
-                    Constants.CURRENCY,
-                    booking.getTotalFare());
+                    booking.getTotalFare()));
+            lines.add("Passengers: " + truncate(passengers, 62));
+        }
+        printFrame(lines);
+    }
+
+    private void printFrame(String... lines) {
+        for (String line : ScreenStyle.frame(lines)) {
+            System.out.println(line);
+        }
+    }
+
+    private void printFrame(List<String> lines) {
+        for (String line : ScreenStyle.frame(lines)) {
+            System.out.println(line);
         }
     }
 
@@ -721,7 +737,7 @@ public class ConsoleMenu {
             if (str.equalsIgnoreCase("cancel")) return null;
             try {
                 LocalDate date = LocalDate.parse(str.trim(), Trip.DATE_FORMATTER);
-                LocalDate today = LocalDate.now();
+                LocalDate today = Clock.now().toLocalDate();
                 if (date.isBefore(today)) {
                     System.out.println(ConsoleColors.colorize("Travel date cannot be in the past.", ConsoleColors.RED));
                     checkPromptAttempts(++attempts);

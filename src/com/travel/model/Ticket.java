@@ -5,10 +5,12 @@ import com.travel.util.Constants;
 import com.travel.util.IdGenerator;
 import com.travel.payment.Payment;
 import com.travel.payment.PaymentStatus;
+import com.travel.ui.ScreenStyle;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -50,52 +52,58 @@ public class Ticket implements Serializable {
         Trip trip = booking.getTrip();
         Route route = trip.getRoute();
 
-        System.out.println("================================================================================");
-        System.out.println(ConsoleColors.colorize(
-                "                     ELECTRONIC TRAVEL TICKET - " + booking.getStatus().toString().toUpperCase(),
-                ConsoleColors.GREEN,
-                ConsoleColors.BOLD
-        ));
-        System.out.println("================================================================================");
-        System.out.printf("  PNR: %-20s  TICKET ID    : %s\n", booking.getPnr(), ticketId);
-        System.out.printf("  BOOKING TIME   : %-20s  STATUS       : %s\n",
-                issueTime.format(DATE_TIME_FORMATTER), booking.getStatus());
-        System.out.println("--------------------------------------------------------------------------------");
-        System.out.printf("  OPERATOR       : %-20s  SERVICE MODE : %s\n",
-                trip.getTransport().getOperatorName(), route.getTransportType().getDisplayName());
-        System.out.printf("  FROM           : %-20s  TO           : %s\n",
-                route.getSource().getName(), route.getDestination().getName());
-        System.out.printf("  TRAVEL DATE    : %-20s  DISTANCE     : %.1f km\n",
-                trip.getDate().format(Trip.DATE_FORMATTER), route.getDistanceKm());
-        System.out.printf("  DEPARTURE      : %-20s  ARRIVAL      : %s\n",
-                trip.getDepartureTime().format(Trip.TIME_FORMATTER), trip.getFormattedArrival());
-        System.out.printf("  TRAVEL CLASS   : %-20s  TOTAL SEATS  : %d\n",
-                booking.getSeatClass().getDisplayName(), booking.getSeats().size());
-        System.out.printf("  SEAT NUMBERS   : %s\n", String.join(", ", booking.getSeatNumbers()));
+        List<String> lines = new ArrayList<>();
+        String title = "ELECTRONIC TRAVEL TICKET - "
+                + booking.getStatus().toString().toUpperCase();
+        lines.add(ConsoleColors.colorize(ScreenStyle.center(title, 74),
+                ConsoleColors.GREEN, ConsoleColors.BOLD));
+        lines.add(ScreenStyle.ruleContent());
+        lines.add("PNR: " + booking.getPnr());
+        lines.add("Ticket ID: " + ticketId);
+        lines.add("Booking time: " + issueTime.format(DATE_TIME_FORMATTER));
+        lines.add("Status: " + booking.getStatus());
+        lines.add(ScreenStyle.ruleContent());
+        lines.add("Operator: " + trip.getTransport().getOperatorName());
+        lines.add("Service mode: " + route.getTransportType().getDisplayName());
+        lines.add("From: " + route.getSource().getName());
+        lines.add("To: " + route.getDestination().getName());
+        lines.add(String.format("Travel date: %s | Distance: %.1f km",
+                trip.getDate().format(Trip.DATE_FORMATTER), route.getDistanceKm()));
+        lines.add("Departure: " + trip.getDepartureTime().format(Trip.TIME_FORMATTER));
+        lines.add("Arrival: " + trip.getFormattedArrival());
+        lines.add("Travel class: " + booking.getSeatClass().getDisplayName());
+        lines.add("Total seats: " + booking.getSeats().size());
+        lines.add("Seat numbers: " + String.join(", ", booking.getSeatNumbers()));
         Payment payment = booking.getPayment();
         if (payment != null) {
-            System.out.printf("  PAYMENT MODE   : %-20s  PAYMENT STATUS: %s\n",
-                    payment.getPaymentMode().getDisplayName(), payment.getStatus());
-            System.out.printf("  TRANSACTION ID : %s\n", payment.getTransactionId());
+            lines.add("Payment mode: " + payment.getPaymentMode().getDisplayName());
+            lines.add("Payment status: " + payment.getStatus());
+            lines.add("Transaction ID: " + payment.getTransactionId());
         }
-        System.out.println("--------------------------------------------------------------------------------");
-        System.out.println(ConsoleColors.colorize("  PASSENGER MANIFEST:", ConsoleColors.WHITE, ConsoleColors.BOLD));
+        lines.add(ScreenStyle.ruleContent());
+        lines.add(ConsoleColors.colorize("PASSENGER MANIFEST:",
+                ConsoleColors.WHITE, ConsoleColors.BOLD));
 
         List<Passenger> passengers = booking.getPassengers();
         for (int i = 0; i < passengers.size(); i++) {
             Passenger p = passengers.get(i);
-            System.out.printf("   %d. Seat: %-6s | %-24s | Age: %-3d | Gender: %s\n",
-                    (i + 1), p.getSeatNumber(), p.getName(), p.getAge(), p.getGender());
+            lines.add(String.format("%d. Seat: %s | %s | Age: %d | Gender: %s",
+                    i + 1, p.getSeatNumber(), p.getName(), p.getAge(), p.getGender()));
         }
 
-        System.out.println("--------------------------------------------------------------------------------");
+        lines.add(ScreenStyle.ruleContent());
         String fareLabel = payment != null && payment.getStatus() == PaymentStatus.PAY_AT_ARRIVAL
                 ? "TOTAL FARE DUE:"
                 : "TOTAL FARE PAID:";
-        System.out.printf("  %-16s " + ConsoleColors.colorize(Constants.CURRENCY + "%.0f", ConsoleColors.GREEN, ConsoleColors.BOLD) + " (Inclusive of GST, charges & payment fee)\n",
-                fareLabel, booking.getTotalFare());
-        System.out.println("  Keep your PNR safe. You will need it to view or cancel this ticket.");
-        System.out.println("================================================================================\n");
+        lines.add(ConsoleColors.colorize(
+                String.format("%s %s%.0f", fareLabel, Constants.CURRENCY,
+                        booking.getTotalFare()),
+                ConsoleColors.GREEN, ConsoleColors.BOLD));
+        lines.add("Keep your PNR safe to view or cancel this ticket.");
+        for (String line : ScreenStyle.frame(lines)) {
+            System.out.println(line);
+        }
+        System.out.println();
     }
 
     @Override
