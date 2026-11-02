@@ -11,3 +11,4 @@ data/bookings.dat.tmp
 .project
 .settings/
 .DS_Store
+data/bookings.dat
